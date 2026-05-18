@@ -1,0 +1,1 @@
+import{j as a}from"./app-BzERYxoF.js";function o({value:t,className:e="",children:s,...r}){return a.jsx("label",{...r,className:"block text-xs font-bold uppercase tracking-[0.12em] text-slate-300 "+e,children:t||s})}export{o as I};

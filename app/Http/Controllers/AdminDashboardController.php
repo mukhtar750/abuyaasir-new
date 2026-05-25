@@ -9,6 +9,7 @@ use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Campaign;
 use App\Models\Setting;
+use App\Models\Transaction;
 use Inertia\Inertia;
 
 class AdminDashboardController extends Controller
@@ -21,6 +22,7 @@ class AdminDashboardController extends Controller
             'total_tutors' => User::where('role', 'tutor')->count(),
             'total_courses' => Course::count(),
             'total_subjects' => Subject::count(),
+            'pending_payments' => Transaction::where('status', 'pending')->count(),
             'maintenance_mode' => Setting::get('maintenance_mode', 'false') === 'true',
         ];
 
@@ -31,6 +33,10 @@ class AdminDashboardController extends Controller
         $courses = Course::with(['subject', 'lessons'])->get();
         $campaigns = Campaign::latest()->get();
         $allUsers = User::orderBy('name')->get();
+        $pendingTransactions = Transaction::with(['user', 'course'])
+            ->where('status', 'pending')
+            ->latest()
+            ->get();
 
         return Inertia::render('Admin/Dashboard', [
             'stats' => $stats,
@@ -40,6 +46,7 @@ class AdminDashboardController extends Controller
             'courses' => $courses,
             'campaigns' => $campaigns,
             'allUsers' => $allUsers,
+            'pendingTransactions' => $pendingTransactions,
         ]);
     }
 
@@ -158,6 +165,20 @@ class AdminDashboardController extends Controller
         return redirect()->back()->with('message', "User account {$user->name} deleted successfully.");
     }
 
+    // Admin Action: Reset User Password manually
+    public function resetUserPassword(Request $request, $id)
+    {
+        $request->validate([
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = User::findOrFail($id);
+        $user->password = \Illuminate\Support\Facades\Hash::make($request->password);
+        $user->save();
+
+        return redirect()->back()->with('message', "Password for {$user->name} has been reset successfully.");
+    }
+
     // Admin Action: Delete Subject Category
     public function deleteSubject($id)
     {
@@ -186,4 +207,32 @@ class AdminDashboardController extends Controller
 
         return redirect()->back()->with('message', 'Campaign deleted successfully.');
     }
+
+    // Admin Action: Get Bank Details
+    public function getBankDetails()
+    {
+        return response()->json([
+            'account_number' => Setting::get('bank_account_number', '0123456789'),
+        ]);
+    }
+
+    // Admin Action: Update Bank Details
+    public function updateBankDetails(Request $request)
+    {
+        $request->validate([
+            'account_number' => 'required|string|max:50',
+        ]);
+        Setting::set('bank_account_number', $request->account_number);
+        return response()->json(['message' => 'Bank details updated successfully.'], 200);
+    }
+
+    // Admin UI: Edit Bank Details Page
+    public function editBankDetails()
+    {
+        $accountNumber = Setting::get('bank_account_number', '0123456789');
+        return Inertia::render('Admin/BankSettings', [
+            'accountNumber' => $accountNumber,
+        ]);
+    }
+
 }

@@ -26,6 +26,13 @@ class User extends Authenticatable
         'avatar',
         'points',
         'streak_days',
+        'bio',
+        'specialty',
+        'is_active',
+        'is_approved',
+        'hourly_rate',
+        'balance',
+        'last_active_at',
     ];
 
     /**
@@ -88,5 +95,20 @@ class User extends Authenticatable
     public function cbtResults()
     {
         return $this->hasMany(CbtResult::class, 'student_id');
+    }
+
+    public function tutorSessions()
+    {
+        return $this->hasMany(LiveSession::class, 'tutor_id');
+    }
+
+    public function studentSessions()
+    {
+        return $this->hasMany(LiveSession::class, 'student_id');
+    }
+
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
     }
 }

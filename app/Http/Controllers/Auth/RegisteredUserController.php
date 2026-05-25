@@ -43,6 +43,9 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
+        // Send Custom Welcome Email
+        \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\WelcomeMail($user));
+
         event(new Registered($user));
 
         Auth::login($user);

@@ -59,6 +59,13 @@ class StudentDashboardController extends Controller
             'completed_courses' => $enrollments->whereNotNull('completed_at')->count(),
         ];
 
+        // 7. Payment Transactions (Notifications)
+        $transactions = \App\Models\Transaction::with('course')
+            ->where('user_id', $user->id)
+            ->latest()
+            ->take(5)
+            ->get();
+
         return Inertia::render('Student/Dashboard', [
             'enrollments' => $enrollments,
             'campaigns' => $campaigns,
@@ -66,6 +73,7 @@ class StudentDashboardController extends Controller
             'upcomingCbts' => $upcomingCbts,
             'cbtResults' => $cbtResults,
             'stats' => $stats,
+            'transactions' => $transactions,
         ]);
     }
 

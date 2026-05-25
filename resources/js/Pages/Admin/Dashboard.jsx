@@ -3,10 +3,27 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, router } from '@inertiajs/react';
 import { 
     Shield, Users, BookOpen, Layers, Plus, Check, RefreshCw, 
-    Sparkles, Trash2, ShieldAlert, Award, Flame, Megaphone, HelpCircle 
+    Sparkles, Trash2, ShieldAlert, Award, Flame, Megaphone, HelpCircle, Key 
 } from 'lucide-react';
 
-export default function AdminDashboard({ stats, tutors, students, subjects, courses, campaigns, allUsers }) {
+export default function AdminDashboard({ auth, stats, tutors, students, subjects, courses, campaigns, allUsers, pendingTransactions }) {
+    const { post, processing } = useForm();
+    const [rejectNote, setRejectNote] = React.useState('');
+
+    const approvePayment = (id) => {
+        if (confirm('Approve this payment and enroll the student?')) {
+            post(route('admin.payments.approve', id));
+        }
+    };
+
+    const rejectPayment = (id) => {
+        const note = prompt('Reason for rejection:');
+        if (note) {
+            post(route('admin.payments.reject', id), {
+                data: { note }
+            });
+        }
+    };
     const [activeTab, setActiveTab] = useState('overview');
     
     // Forms for Admin Actions
@@ -64,6 +81,18 @@ export default function AdminDashboard({ stats, tutors, students, subjects, cour
     const handleDeleteUser = (userId, userName) => {
         if (confirm(`Are you absolutely sure you want to suspend/delete ${userName}'s account? This action is permanent.`)) {
             router.delete(route('admin.user.delete', userId));
+        }
+    };
+
+    const handleResetPassword = (userId, userName) => {
+        const newPassword = prompt(`Enter new password for ${userName} (min 8 chars):`);
+        if (newPassword && newPassword.length >= 8) {
+            router.post(route('admin.user.password', userId), { 
+                password: newPassword,
+                password_confirmation: newPassword 
+            });
+        } else if (newPassword) {
+            alert("Password must be at least 8 characters.");
         }
     };
 
@@ -168,10 +197,71 @@ export default function AdminDashboard({ stats, tutors, students, subjects, cour
                                 <div className="bg-gradient-to-b from-[#1A3C5E]/20 to-[#0D1B2A] border border-white/5 p-6 rounded-2xl backdrop-blur-md shadow-md flex items-center space-x-4 hover:border-white/10 transition">
                                     <div className="p-3 bg-purple-500/10 text-purple-400 rounded-xl"><BookOpen className="w-7 h-7" /></div>
                                     <div>
-                                        <p className="text-xs uppercase tracking-wider text-gray-400">Subject Domains</p>
-                                        <p className="text-2xl font-bold text-white mt-0.5">{stats.total_subjects}</p>
-                                    </div>
+                                    <p className="text-xs uppercase tracking-wider text-gray-400">Subject Domains</p>
+                                    <p className="text-2xl font-bold text-white mt-0.5">{stats.total_subjects}</p>
                                 </div>
+                            </div>
+
+                            {/* Pending Payments Table */}
+                            {pendingTransactions && pendingTransactions.length > 0 && (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="bg-[#1A3C5E]/15 border border-[#F4A623]/20 p-6 rounded-2xl backdrop-blur-md shadow-lg space-y-4"
+                                >
+                                    <h3 className="text-lg font-serif font-semibold text-white flex items-center">
+                                        <Clock className="w-5 h-5 mr-2 text-[#F4A623]" />
+                                        Pending Enrollment Receipts ({pendingTransactions.length})
+                                    </h3>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr className="border-b border-white/10 text-xs uppercase tracking-wider text-gray-400">
+                                                    <th className="py-3 px-4">Student</th>
+                                                    <th className="py-3 px-4">Course</th>
+                                                    <th className="py-3 px-4">Amount</th>
+                                                    <th className="py-3 px-4">Receipt</th>
+                                                    <th className="py-3 px-4 text-right">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-white/5 text-sm">
+                                                {pendingTransactions.map((tx) => (
+                                                    <tr key={tx.id} className="hover:bg-white/5 transition duration-150">
+                                                        <td className="py-3.5 px-4">{tx.user.name}</td>
+                                                        <td className="py-3.5 px-4">{tx.course?.title || 'Wallet Top-up'}</td>
+                                                        <td className="py-3.5 px-4 font-bold text-[#2ECC8C]">&#8358;{parseFloat(tx.amount).toLocaleString()}</td>
+                                                        <td className="py-3.5 px-4">
+                                                            <a 
+                                                                href={`/storage/${tx.proof_of_payment}`} 
+                                                                target="_blank" 
+                                                                className="text-[#F4A623] hover:underline flex items-center text-xs"
+                                                            >
+                                                                View Receipt <PlayCircle className="w-3 h-3 ml-1" />
+                                                            </a>
+                                                        </td>
+                                                        <td className="py-3.5 px-4 text-right space-x-2">
+                                                            <button 
+                                                                onClick={() => approvePayment(tx.id)}
+                                                                disabled={processing}
+                                                                className="px-3 py-1.5 bg-emerald-500 text-black text-xs font-bold rounded-lg hover:bg-emerald-400 transition"
+                                                            >
+                                                                Approve
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => rejectPayment(tx.id)}
+                                                                disabled={processing}
+                                                                className="px-3 py-1.5 bg-red-500 text-white text-xs font-bold rounded-lg hover:bg-red-400 transition"
+                                                            >
+                                                                Reject
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </motion.div>
+                            )}
                             </div>
 
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -337,6 +427,13 @@ export default function AdminDashboard({ stats, tutors, students, subjects, cour
                                                             <option value="tutor">Tutor</option>
                                                             <option value="admin">Admin</option>
                                                         </select>
+                                                        <button
+                                                            onClick={() => handleResetPassword(usr.id, usr.name)}
+                                                            className="p-1.5 bg-blue-500/10 hover:bg-blue-500 text-blue-400 hover:text-white rounded-lg transition"
+                                                            title="Reset Password"
+                                                        >
+                                                            <Key className="w-4 h-4" />
+                                                        </button>
                                                         <button
                                                             onClick={() => handleDeleteUser(usr.id, usr.name)}
                                                             className="p-1.5 bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white rounded-lg transition"

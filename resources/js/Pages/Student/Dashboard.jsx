@@ -3,8 +3,24 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Award, BookOpen, Clock, Flame, PlayCircle, ShieldCheck, Sparkles, AlertCircle } from 'lucide-react';
 
-export default function StudentDashboard({ enrollments, campaigns, exploreCourses, upcomingCbts, cbtResults, stats }) {
+export default function StudentDashboard({ enrollments, campaigns, exploreCourses, upcomingCbts, cbtResults, stats, flash, transactions }) {
     const enrollForm = useForm({});
+    const [selectedCourse, setSelectedCourse] = React.useState(null);
+    const { data, setData, post, processing, errors, reset } = useForm({
+        course_id: '',
+        amount: '',
+        receipt: null,
+    });
+
+    const submitReceipt = (e) => {
+        e.preventDefault();
+        post(route('payment.upload-receipt'), {
+            onSuccess: () => {
+                setSelectedCourse(null);
+                reset();
+            },
+        });
+    };
 
     return (
         <AuthenticatedLayout
@@ -162,14 +178,13 @@ export default function StudentDashboard({ enrollments, campaigns, exploreCourse
                                             </div>
                                             <button
                                                 onClick={() => {
-                                                    if (confirm(`Are you sure you want to self-enroll in ${course.title}?`)) {
-                                                        enrollForm.post(route('student.course.enroll', course.id));
-                                                    }
+                                                    setSelectedCourse(course);
+                                                    setData('course_id', course.id);
+                                                    setData('amount', course.price);
                                                 }}
-                                                disabled={enrollForm.processing}
                                                 className="px-5 py-2.5 bg-white/5 border border-white/10 hover:bg-[#F4A623]/25 hover:border-[#F4A623]/35 rounded-xl text-xs font-bold text-white transition disabled:opacity-40 w-full mt-4"
                                             >
-                                                Self Enroll
+                                                Pay & Enroll
                                             </button>
                                         </div>
                                     ))}
@@ -177,8 +192,90 @@ export default function StudentDashboard({ enrollments, campaigns, exploreCourse
                             </div>
                         </div>
 
+                        {/* Payment Modal */}
+                        {selectedCourse && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                                <motion.div 
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="bg-[#0D1B2A] border border-white/10 p-8 rounded-3xl max-w-md w-full space-y-6"
+                                >
+                                    <div className="flex justify-between items-start">
+                                        <h3 className="text-xl font-bold">Upload Payment Receipt</h3>
+                                        <button onClick={() => setSelectedCourse(null)} className="text-gray-500 hover:text-white">&times;</button>
+                                    </div>
+                                    
+                                    <div className="bg-[#1A3C5E]/20 p-4 rounded-xl border border-[#F4A623]/20">
+                                        <p className="text-sm text-gray-300">To enroll in <span className="text-[#F4A623] font-bold">{selectedCourse.title}</span>, please pay <span className="text-[#2ECC8C] font-bold">&#8358;{parseFloat(selectedCourse.price).toLocaleString()}</span> to the bank details provided below and upload your receipt.</p>
+                                    </div>
+
+                                    <form onSubmit={submitReceipt} className="space-y-4">
+                                        <div>
+                                            <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Receipt (Image/PDF)</label>
+                                            <input 
+                                                type="file" 
+                                                onChange={e => setData('receipt', e.target.files[0])}
+                                                className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#1A3C5E] file:text-white hover:file:bg-[#1A3C5E]/80"
+                                                required
+                                            />
+                                            {errors.receipt && <p className="text-red-500 text-xs mt-1">{errors.receipt}</p>}
+                                        </div>
+
+                                        <button 
+                                            type="submit"
+                                            disabled={processing}
+                                            className="w-full py-3 bg-[#F4A623] text-black font-black rounded-xl text-xs uppercase tracking-wider hover:bg-[#F4A623]/90 transition"
+                                        >
+                                            {processing ? 'Uploading...' : 'Submit Receipt for Verification'}
+                                        </button>
+                                    </form>
+                                </motion.div>
+                            </div>
+                        )}
+
                         {/* CBT preparation module and historical grades */}
                         <div className="space-y-8">
+                            
+                            {/* Payment Transactions (Notifications) */}
+                            <div className="space-y-4">
+                                <h3 className="text-2xl font-serif font-semibold text-white">Payment Verifications</h3>
+                                {(!transactions || transactions.length === 0) ? (
+                                    <div className="bg-[#1A3C5E]/10 border border-white/5 rounded-2xl p-6 text-center text-gray-400 text-xs">
+                                        No recent manual payment receipts uploaded.
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {transactions.map((trx) => (
+                                            <div key={trx.id} className="bg-[#1A3C5E]/15 border border-white/5 rounded-2xl p-4 hover:border-white/10 transition">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <div>
+                                                        <h4 className="font-bold text-sm text-white leading-tight">{trx.course?.title || 'Unknown Course'}</h4>
+                                                        <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-wider">Ref: {trx.reference}</p>
+                                                    </div>
+                                                    <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider shrink-0 ${
+                                                        trx.status === 'success' ? 'bg-[#2ECC8C]/20 text-[#2ECC8C] border border-[#2ECC8C]/30' :
+                                                        trx.status === 'failed' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
+                                                        'bg-[#F4A623]/20 text-[#F4A623] border border-[#F4A623]/30'
+                                                    }`}>
+                                                        {trx.status === 'pending' ? 'Verifying' : trx.status}
+                                                    </span>
+                                                </div>
+                                                {trx.status === 'failed' && trx.admin_note && (
+                                                    <div className="mt-2 p-2 bg-rose-500/10 border border-rose-500/20 rounded-lg text-[11px] text-rose-300">
+                                                        <span className="font-bold">Reason:</span> {trx.admin_note}
+                                                    </div>
+                                                )}
+                                                {trx.status === 'success' && (
+                                                    <div className="mt-2 p-2 bg-[#2ECC8C]/10 border border-[#2ECC8C]/20 rounded-lg text-[11px] text-[#2ECC8C]">
+                                                        Your payment has been approved! You can now start studying.
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
                             {/* Dynamic Timed CBT Mocks */}
                             <div className="space-y-4">
                                 <h3 className="text-2xl font-serif font-semibold text-white">CBT Exam Prep</h3>

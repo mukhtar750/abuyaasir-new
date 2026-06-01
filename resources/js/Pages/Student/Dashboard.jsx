@@ -3,7 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Award, BookOpen, Clock, Flame, PlayCircle, ShieldCheck, Sparkles, AlertCircle } from 'lucide-react';
 
-export default function StudentDashboard({ enrollments, campaigns, exploreCourses, upcomingCbts, cbtResults, stats, flash, transactions }) {
+export default function StudentDashboard({ enrollments, campaigns, exploreCourses, upcomingCbts, cbtResults, stats, flash, transactions, upcomingClasses = [] }) {
     const enrollForm = useForm({});
     const [selectedCourse, setSelectedCourse] = React.useState(null);
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -97,6 +97,39 @@ export default function StudentDashboard({ enrollments, campaigns, exploreCourse
                                     className="px-6 py-3 bg-gradient-to-r from-[#F4A623] to-[#FFB74D] hover:from-[#F4A623]/95 hover:to-[#FFB74D]/95 text-[#07111f] font-black rounded-xl text-xs uppercase tracking-wider transition duration-200 shadow-md shadow-[#F4A623]/15 shrink-0"
                                 >
                                     Claim Offer Now
+                                </a>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Timeline Widget: Next Upcoming Class */}
+                    {upcomingClasses.length > 0 && (
+                        <div className="bg-gradient-to-r from-blue-500/20 to-[#1A3C5E]/40 border border-blue-500/30 rounded-2xl p-6 relative overflow-hidden shadow-lg animate-pulse">
+                            <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+                                <div className="space-y-2">
+                                    <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-semibold uppercase tracking-wider">
+                                        <PlayCircle className="h-3.5 w-3.5" />
+                                        <span>Next Live Session</span>
+                                    </div>
+                                    <h3 className="text-xl font-bold text-white leading-tight">{upcomingClasses[0].topic}</h3>
+                                    <p className="text-sm text-gray-300">
+                                        {new Date(upcomingClasses[0].scheduled_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                                        {upcomingClasses[0].tutor && ` with ${upcomingClasses[0].tutor.name}`}
+                                    </p>
+                                </div>
+                                <a
+                                    href={upcomingClasses[0].meeting_link ? route('sessions.join', upcomingClasses[0].id) : '#'}
+                                    onClick={(e) => {
+                                        if (!upcomingClasses[0].meeting_link) {
+                                            e.preventDefault();
+                                            alert("Meeting link is not available yet.");
+                                        }
+                                    }}
+                                    target={upcomingClasses[0].meeting_link ? "_blank" : undefined}
+                                    rel="noopener noreferrer"
+                                    className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 hover:opacity-90 text-white font-black rounded-xl text-xs uppercase tracking-wider transition duration-200 shadow-md shrink-0"
+                                >
+                                    Join Class Now
                                 </a>
                             </div>
                         </div>

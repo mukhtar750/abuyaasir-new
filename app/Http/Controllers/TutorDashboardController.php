@@ -34,11 +34,19 @@ class TutorDashboardController extends Controller
             'total_students' => $enrollments->unique('student_id')->count(),
         ];
 
+        // 4. Fetch classes scheduled today
+        $classesToday = \App\Models\LiveSession::where('tutor_id', $tutor->id)
+            ->whereDate('scheduled_at', now()->toDateString())
+            ->with(['student', 'course'])
+            ->orderBy('scheduled_at', 'asc')
+            ->get();
+
         return Inertia::render('Tutor/Dashboard', [
             'stats' => $stats,
             'subjects' => $subjects,
             'courses' => $courses,
             'enrollments' => $enrollments,
+            'classesToday' => $classesToday,
         ]);
     }
 

@@ -66,6 +66,19 @@ class StudentDashboardController extends Controller
             ->take(5)
             ->get();
 
+        // 8. Upcoming Live Classes
+        $enrolledCourseIds = $enrollments->pluck('course_id');
+        $upcomingClasses = \App\Models\LiveSession::where(function($query) use ($user, $enrolledCourseIds) {
+                $query->where('student_id', $user->id)
+                      ->orWhereIn('course_id', $enrolledCourseIds);
+            })
+            ->where('scheduled_at', '>=', now())
+            ->whereIn('status', ['scheduled', 'live'])
+            ->with(['tutor', 'course'])
+            ->orderBy('scheduled_at', 'asc')
+            ->take(5)
+            ->get();
+
         return Inertia::render('Student/Dashboard', [
             'enrollments' => $enrollments,
             'campaigns' => $campaigns,
@@ -74,6 +87,7 @@ class StudentDashboardController extends Controller
             'cbtResults' => $cbtResults,
             'stats' => $stats,
             'transactions' => $transactions,
+            'upcomingClasses' => $upcomingClasses,
         ]);
     }
 

@@ -41,10 +41,17 @@ class CourseController extends Controller
             ->pluck('lesson_id')
             ->toArray();
 
+        // Retrieve live sessions scheduled for this specific course
+        $liveSessions = LiveSession::where('course_id', $course->id)
+            ->with('tutor')
+            ->orderBy('scheduled_at', 'asc')
+            ->get();
+
         return Inertia::render('Student/Courses/Learn', [
             'course' => $course,
             'completedLessonIds' => $completedLessonIds,
-            'progressPercent' => $enrollment->progress_percent
+            'progressPercent' => $enrollment->progress_percent,
+            'liveSessions' => $liveSessions,
         ]);
     }
 

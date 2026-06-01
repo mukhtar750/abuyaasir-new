@@ -50,6 +50,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // --- Notifications ---
+    Route::post('/notifications/mark-read', function (\Illuminate\Http\Request $request) {
+        $request->user()->unreadNotifications->markAsRead();
+        return back();
+    })->name('notifications.markRead');
+
+    // --- Live Sessions ---
+    Route::get('/sessions', [LiveSessionController::class, 'index'])->name('sessions.index');
+    Route::post('/sessions', [LiveSessionController::class, 'store'])->name('sessions.store');
+    Route::put('/sessions/{session}', [LiveSessionController::class, 'update'])->name('sessions.update');
+    Route::delete('/sessions/{session}', [LiveSessionController::class, 'destroy'])->name('sessions.destroy');
+    Route::post('/sessions/{session}/attendance', [LiveSessionController::class, 'submitAttendance'])->name('sessions.attendance');
+    Route::post('/sessions/{session}/attendance/unlock', [LiveSessionController::class, 'unlockAttendance'])->name('sessions.attendance.unlock');
+    Route::post('/sessions/{session}/recording', [LiveSessionController::class, 'uploadRecording'])->name('sessions.recording');
+    Route::get('/sessions/{session}/join', [LiveSessionController::class, 'join'])->name('sessions.join');
+
     // --- Student Dashboard ---
     Route::middleware('role:student')->group(function () {
         Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('dashboard');
@@ -67,11 +83,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/cbt/{id}/take', [CbtController::class, 'takeExam'])->name('cbt.take');
         Route::post('/cbt/{id}/submit', [CbtController::class, 'submitExam'])->name('cbt.submit');
         Route::get('/cbt/results/{id}/pdf', [CbtController::class, 'downloadPdf'])->name('cbt.result.pdf');
-
-        // --- Live Sessions ---
-        Route::get('/sessions', [LiveSessionController::class, 'index'])->name('sessions.index');
-        Route::post('/sessions', [LiveSessionController::class, 'store'])->name('sessions.store');
-        Route::get('/sessions/{session}/join', [LiveSessionController::class, 'join'])->name('sessions.join');
 
         // --- Manual Payment ---
         Route::post('/payment/upload-receipt', [ManualPaymentController::class, 'submitReceipt'])->name('payment.upload-receipt');
@@ -125,7 +136,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 require __DIR__.'/auth.php';
 
 Route::get('/logout', function () {
-    auth()->logout();
+    \Illuminate\Support\Facades\Auth::logout();
     request()->session()->invalidate();
     request()->session()->regenerateToken();
     return redirect('/');

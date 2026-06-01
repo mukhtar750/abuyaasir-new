@@ -6,7 +6,7 @@ import {
     Sparkles, Trash2, ShieldAlert, Award, Flame, Megaphone, HelpCircle, Key 
 } from 'lucide-react';
 
-export default function AdminDashboard({ auth, stats, tutors, students, subjects, courses, campaigns, allUsers, pendingTransactions }) {
+export default function AdminDashboard({ auth, stats, tutors, students, subjects, courses, campaigns, allUsers, pendingTransactions, sessions = [] }) {
     const { post, processing } = useForm();
     const [rejectNote, setRejectNote] = React.useState('');
 
@@ -112,6 +112,12 @@ export default function AdminDashboard({ auth, stats, tutors, students, subjects
         }
     };
 
+    const handleCancelSession = (id) => {
+        if (confirm('Are you sure you want to cancel this global session?')) {
+            router.delete(route('sessions.destroy', id));
+        }
+    };
+
     return (
         <AuthenticatedLayout
             header={
@@ -149,7 +155,8 @@ export default function AdminDashboard({ auth, stats, tutors, students, subjects
                             { id: 'overview', label: '📊 Overview' },
                             { id: 'users', label: '👥 User Directory' },
                             { id: 'curriculum', label: '🎓 Curriculum Hub' },
-                            { id: 'campaigns', label: '📢 Ad Campaigns' }
+                            { id: 'campaigns', label: '📢 Ad Campaigns' },
+                            { id: 'sessions', label: '🎥 Classes & Timetable' }
                         ].map((tab) => (
                             <button
                                 key={tab.id}
@@ -673,6 +680,78 @@ export default function AdminDashboard({ auth, stats, tutors, students, subjects
                                         ))}
                                     </div>
                                 )}
+                            </div>
+                        </div>
+                    )}
+                    {/* TAB CONTENT: SESSIONS & TIMETABLE */}
+                    {activeTab === 'sessions' && (
+                        <div className="bg-[#1A3C5E]/15 border border-white/5 p-6 rounded-2xl backdrop-blur-md shadow-lg space-y-6 animate-fadeIn">
+                            <div>
+                                <h3 className="text-lg font-serif font-semibold text-white">Global Class Timetable</h3>
+                                <p className="text-xs text-gray-400 mt-1">Monitor, filter, and cancel any scheduled live sessions across the entire platform.</p>
+                            </div>
+
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="border-b border-white/10 text-xs uppercase tracking-wider text-gray-400">
+                                            <th className="py-3 px-4">Topic & Date</th>
+                                            <th className="py-3 px-4">Tutor</th>
+                                            <th className="py-3 px-4">Type</th>
+                                            <th className="py-3 px-4">Status</th>
+                                            <th className="py-3 px-4 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5 text-sm">
+                                        {sessions.length === 0 ? (
+                                            <tr>
+                                                <td colSpan="5" className="py-6 text-center text-gray-500 italic">No classes scheduled yet.</td>
+                                            </tr>
+                                        ) : (
+                                            sessions.map(session => (
+                                                <tr key={session.id} className="hover:bg-white/5 transition duration-150">
+                                                    <td className="py-3.5 px-4">
+                                                        <div className="font-bold text-white mb-1">{session.topic}</div>
+                                                        <div className="text-xs text-gray-400">
+                                                            {new Date(session.scheduled_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                                                            <span className="ml-1 text-gray-500">({session.duration_minutes}m)</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-3.5 px-4 text-gray-300 font-medium">
+                                                        {session.tutor?.name || 'N/A'}
+                                                    </td>
+                                                    <td className="py-3.5 px-4">
+                                                        {session.course ? (
+                                                            <span className="text-amber-400 text-xs font-semibold block">Course: {session.course.title}</span>
+                                                        ) : (
+                                                            <span className="text-blue-400 text-xs font-semibold block">1-on-1: {session.student?.name}</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="py-3.5 px-4">
+                                                        <span className={`inline-block px-2 py-0.5 text-[10px] font-black uppercase rounded tracking-wider ${
+                                                            session.status === 'completed' ? 'bg-blue-500/15 text-blue-400' :
+                                                            session.status === 'scheduled' ? 'bg-[#2ECC8C]/15 text-[#2ECC8C]' :
+                                                            session.status === 'cancelled' ? 'bg-rose-500/15 text-rose-400' :
+                                                            'bg-[#F4A623]/15 text-[#F4A623]'
+                                                        }`}>
+                                                            {session.status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="py-3.5 px-4 text-right">
+                                                        {session.status !== 'cancelled' && (
+                                                            <button
+                                                                onClick={() => handleCancelSession(session.id)}
+                                                                className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white rounded-lg transition text-xs font-bold uppercase tracking-wider"
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     )}

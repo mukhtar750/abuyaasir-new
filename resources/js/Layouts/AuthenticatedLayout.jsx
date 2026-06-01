@@ -4,6 +4,7 @@ import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import { Link, usePage } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import { ChevronDown, Menu, X } from 'lucide-react';
+import NotificationDropdown from '@/Components/NotificationDropdown';
 
 export default function AuthenticatedLayout({ header, children }) {
     const user = usePage().props.auth.user;
@@ -53,27 +54,50 @@ export default function AuthenticatedLayout({ header, children }) {
                                     </NavLink>
                                 )}
                                 {user.role === 'tutor' && (
-                                    <NavLink
-                                        href={route('tutor.dashboard')}
-                                        active={route().current('tutor.dashboard')}
-                                        className="text-white hover:text-[#F4A623] active:text-[#F4A623]"
-                                    >
-                                        Tutor Workspace
-                                    </NavLink>
+                                    <>
+                                        <NavLink
+                                            href={route('tutor.dashboard')}
+                                            active={route().current('tutor.dashboard')}
+                                            className="text-white hover:text-[#F4A623] active:text-[#F4A623]"
+                                        >
+                                            Tutor Workspace
+                                        </NavLink>
+                                        <NavLink
+                                            href={route('sessions.index')}
+                                            active={route().current('sessions.index')}
+                                            className="text-white hover:text-[#F4A623] active:text-[#F4A623]"
+                                        >
+                                            Live Classes
+                                        </NavLink>
+                                    </>
                                 )}
                                 {user.role === 'student' && (
-                                    <NavLink
-                                        href={route('dashboard')}
-                                        active={route().current('dashboard')}
-                                        className="text-white hover:text-[#F4A623] active:text-[#F4A623]"
-                                    >
-                                        Student Dashboard
-                                    </NavLink>
+                                    <>
+                                        <NavLink
+                                            href={route('dashboard')}
+                                            active={route().current('dashboard')}
+                                            className="text-white hover:text-[#F4A623] active:text-[#F4A623]"
+                                        >
+                                            Student Dashboard
+                                        </NavLink>
+                                        <NavLink
+                                            href={route('sessions.index')}
+                                            active={route().current('sessions.index')}
+                                            className="text-white hover:text-[#F4A623] active:text-[#F4A623]"
+                                        >
+                                            Live Sessions
+                                        </NavLink>
+                                    </>
                                 )}
                             </div>
                         </div>
 
                         <div className="hidden sm:ms-6 sm:flex sm:items-center">
+                            {/* Notification Bell */}
+                            <div className="ms-3">
+                                <NotificationDropdown notifications={user.unreadNotifications || []} />
+                            </div>
+
                             <div className="relative ms-3">
                                 <Dropdown>
                                     <Dropdown.Trigger>
@@ -135,22 +159,40 @@ export default function AuthenticatedLayout({ header, children }) {
                 >
                     <div className="space-y-1 pb-3 pt-2">
                         {user.role === 'student' && (
-                            <ResponsiveNavLink
-                                href={route('dashboard')}
-                                active={route().current('dashboard')}
-                                className="text-white"
-                            >
-                                Student Dashboard
-                            </ResponsiveNavLink>
+                            <>
+                                <ResponsiveNavLink
+                                    href={route('dashboard')}
+                                    active={route().current('dashboard')}
+                                    className="text-white"
+                                >
+                                    Student Dashboard
+                                </ResponsiveNavLink>
+                                <ResponsiveNavLink
+                                    href={route('sessions.index')}
+                                    active={route().current('sessions.index')}
+                                    className="text-white"
+                                >
+                                    Live Sessions
+                                </ResponsiveNavLink>
+                            </>
                         )}
                         {user.role === 'tutor' && (
-                            <ResponsiveNavLink
-                                href={route('tutor.dashboard')}
-                                active={route().current('tutor.dashboard')}
-                                className="text-white"
-                            >
-                                Tutor Workspace
-                            </ResponsiveNavLink>
+                            <>
+                                <ResponsiveNavLink
+                                    href={route('tutor.dashboard')}
+                                    active={route().current('tutor.dashboard')}
+                                    className="text-white"
+                                >
+                                    Tutor Workspace
+                                </ResponsiveNavLink>
+                                <ResponsiveNavLink
+                                    href={route('sessions.index')}
+                                    active={route().current('sessions.index')}
+                                    className="text-white"
+                                >
+                                    Live Classes
+                                </ResponsiveNavLink>
+                            </>
                         )}
                         {user.role === 'admin' && (
                             <ResponsiveNavLink

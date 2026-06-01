@@ -24,6 +24,8 @@ class AdminDashboardController extends Controller
             'total_subjects' => Subject::count(),
             'pending_payments' => Transaction::where('status', 'pending')->count(),
             'maintenance_mode' => Setting::get('maintenance_mode', 'false') === 'true',
+            'total_sessions' => \App\Models\LiveSession::count(),
+            'completed_sessions' => \App\Models\LiveSession::where('status', 'completed')->count(),
         ];
 
         // 2. Fetch Lists for Admin Controls
@@ -37,6 +39,9 @@ class AdminDashboardController extends Controller
             ->where('status', 'pending')
             ->latest()
             ->get();
+        $sessions = \App\Models\LiveSession::with(['tutor', 'student', 'course', 'attendances', 'recordings'])
+            ->orderBy('scheduled_at', 'desc')
+            ->get();
 
         return Inertia::render('Admin/Dashboard', [
             'stats' => $stats,
@@ -47,6 +52,7 @@ class AdminDashboardController extends Controller
             'campaigns' => $campaigns,
             'allUsers' => $allUsers,
             'pendingTransactions' => $pendingTransactions,
+            'sessions' => $sessions,
         ]);
     }
 

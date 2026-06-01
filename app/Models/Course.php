@@ -49,4 +49,9 @@ class Course extends Model
                     ->withPivot('enrolled_by_admin', 'progress_percent', 'completed_at')
                     ->withTimestamps();
     }
+
+    public function liveSessions()
+    {
+        return $this->hasMany(LiveSession::class);
+    }
 }

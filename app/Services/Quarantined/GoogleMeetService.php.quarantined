@@ -1,0 +1,90 @@
+<?php
+
+namespace App\Services;
+
+use Google\Client;
+use Google\Service\Calendar;
+use Google\Service\Calendar\Event;
+use Google\Service\Calendar\EventDateTime;
+use Google\Service\Calendar\ConferenceData;
+use Google\Service\Calendar\CreateConferenceRequest;
+use Google\Service\Calendar\ConferenceSolutionKey;
+use Illuminate\Support\Facades\Log;
+
+class GoogleMeetService
+{
+    protected $client;
+    protected $isConfigured = false;
+
+    public function __construct()
+    {
+        $credentialsPath = storage_path('app/google-calendar-credentials.json');
+        if (file_exists($credentialsPath)) {
+            try {
+                $this->client = new Client();
+                $this->client->setAuthConfig($credentialsPath);
+                $this->client->addScope(Calendar::CALENDAR);
+                $this->client->setAccessType('offline');
+                $this->client->setPrompt('select_account consent');
+                $this->isConfigured = true;
+            } catch (\Exception $e) {
+                Log::warning('Google Meet Service Configuration Failed: ' . $e->getMessage());
+            }
+        } else {
+            Log::info('Google Calendar credentials not found at: ' . $credentialsPath . '. Running in fallback mode.');
+        }
+    }
+
+    /**
+     * Create a Google Meet event and return the meeting link.
+     */
+    public function createMeeting($topic, $startTime, $durationMinutes = 60)
+    {
+        if (!$this->isConfigured) {
+            // Generate a realistic mock Google Meet link for seamless local testing
+            $codes = ['abc', 'defg', 'hij'];
+            shuffle($codes);
+            $randomCode = implode('-', [
+                substr(str_shuffle('abcdefghijklmnopqrstuvwxyz'), 0, 3),
+                substr(str_shuffle('abcdefghijklmnopqrstuvwxyz'), 0, 4),
+                substr(str_shuffle('abcdefghijklmnopqrstuvwxyz'), 0, 3)
+            ]);
+            return "https://meet.google.com/{$randomCode}";
+        }
+
+        try {
+            $service = new Calendar($this->client);
+
+            $endTime = (clone $startTime)->addMinutes($durationMinutes);
+
+            $event = new Event([
+                'summary' => $topic,
+                'description' => 'Live Session on MyTutorPlus',
+                'start' => new EventDateTime([
+                    'dateTime' => $startTime->format(\DateTime::RFC3339),
+                    'timeZone' => config('app.timezone'),
+                ]),
+                'end' => new EventDateTime([
+                    'dateTime' => $endTime->format(\DateTime::RFC3339),
+                    'timeZone' => config('app.timezone'),
+                ]),
+                'conferenceData' => new ConferenceData([
+                    'createRequest' => new CreateConferenceRequest([
+                        'requestId' => uniqid(),
+                        'conferenceSolutionKey' => new ConferenceSolutionKey([
+                            'type' => 'hangoutsMeet'
+                        ])
+                    ])
+                ])
+            ]);
+
+            $calendarId = 'primary';
+            $event = $service->events->insert($calendarId, $event, ['conferenceDataVersion' => 1]);
+
+            return $event->getHangoutLink();
+        } catch (\Exception $e) {
+            Log::error('Google Meet Creation Failed: ' . $e->getMessage());
+            return null;
+        }
+    }
+}

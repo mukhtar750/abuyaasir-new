@@ -3,7 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm } from '@inertiajs/react';
 import { Book, Plus, Video, Users, Sparkles, BookOpen } from 'lucide-react';
 
-export default function TutorDashboard({ stats, subjects, courses, enrollments }) {
+export default function TutorDashboard({ stats, subjects, courses, enrollments, classesToday = [] }) {
     
     // Forms for Tutor Actions
     const courseForm = useForm({ subject_id: '', title: '', description: '', type: 'Standard', price: 0 });
@@ -63,6 +63,39 @@ export default function TutorDashboard({ stats, subjects, courses, enrollments }
                             </div>
                         </div>
                     </div>
+
+                    {/* Timeline Widget: Next Upcoming Class Today */}
+                    {classesToday.length > 0 && (
+                        <div className="bg-gradient-to-r from-[#2ECC8C]/20 to-[#1A3C5E]/40 border border-[#2ECC8C]/30 rounded-2xl p-6 relative overflow-hidden shadow-lg animate-pulse">
+                            <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+                                <div className="space-y-2">
+                                    <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#2ECC8C]/10 text-[#2ECC8C] text-xs font-semibold">
+                                        <Video className="h-3.5 w-3.5" />
+                                        <span>UPCOMING CLASS TODAY</span>
+                                    </div>
+                                    <h3 className="text-xl font-bold text-white leading-tight">{classesToday[0].topic}</h3>
+                                    <p className="text-sm text-gray-300">
+                                        Scheduled for: {new Date(classesToday[0].scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} 
+                                        {classesToday[0].course ? ` - ${classesToday[0].course.title}` : ` - 1-on-1 with ${classesToday[0].student?.name}`}
+                                    </p>
+                                </div>
+                                <a
+                                    href={classesToday[0].meeting_link ? route('sessions.join', classesToday[0].id) : '#'}
+                                    onClick={(e) => {
+                                        if (!classesToday[0].meeting_link) {
+                                            e.preventDefault();
+                                            alert("Meeting link is not available yet.");
+                                        }
+                                    }}
+                                    target={classesToday[0].meeting_link ? "_blank" : undefined}
+                                    rel="noopener noreferrer"
+                                    className="px-6 py-3 bg-gradient-to-r from-[#2ECC8C] to-emerald-500 hover:opacity-90 text-[#07111f] font-black rounded-xl text-xs uppercase tracking-wider transition duration-200 shadow-md shrink-0"
+                                >
+                                    Join Class Now
+                                </a>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* Course Creation and Lesson management forms */}

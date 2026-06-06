@@ -57,4 +57,9 @@ class Course extends Model
     {
         return $this->hasMany(LiveSession::class);
     }
+
+    public function tutors()
+    {
+        return $this->belongsToMany(User::class, 'subject_tutor', 'subject_id', 'tutor_id', 'subject_id');
+    }
 }

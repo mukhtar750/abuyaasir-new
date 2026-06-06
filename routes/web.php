@@ -89,7 +89,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // --- Tutor Operations ---
-    Route::prefix('tutor')->middleware(['role:tutor', \App\Http\Middleware\CheckMaintenanceMode::class])->group(function () {
+    Route::prefix('tutor')->middleware(['role:tutor', 'approved_tutor', \App\Http\Middleware\CheckMaintenanceMode::class])->group(function () {
         Route::get('/dashboard', [TutorDashboardController::class, 'index'])->name('tutor.dashboard');
         Route::post('/courses', [TutorDashboardController::class, 'createCourse'])->name('tutor.course.create');
         Route::post('/lessons', [TutorDashboardController::class, 'createLesson'])->name('tutor.lesson.create');
@@ -129,10 +129,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/payments/{transaction}/reject', [ManualPaymentController::class, 'reject'])->name('admin.payments.reject');
         
         // --- Tutor & Course Approvals ---
-        Route::post('/admin/tutors/{user}/approve', [AdminDashboardController::class, 'approveTutor'])->name('admin.tutors.approve');
-        Route::post('/admin/tutors/{user}/reject', [AdminDashboardController::class, 'rejectTutor'])->name('admin.tutors.reject');
-        Route::post('/admin/courses/{course}/approve', [AdminDashboardController::class, 'approveCourse'])->name('admin.courses.approve');
-        Route::post('/admin/courses/{course}/reject', [AdminDashboardController::class, 'rejectCourse'])->name('admin.courses.reject');
+        Route::post('/tutors/{user}/approve', [AdminDashboardController::class, 'approveTutor'])->name('admin.tutors.approve');
+        Route::post('/tutors/{user}/reject', [AdminDashboardController::class, 'rejectTutor'])->name('admin.tutors.reject');
+        Route::post('/courses/{course}/approve', [AdminDashboardController::class, 'approveCourse'])->name('admin.courses.approve');
+        Route::post('/courses/{course}/reject', [AdminDashboardController::class, 'rejectCourse'])->name('admin.courses.reject');
 
         // Bank Details Management
         Route::get('/settings/bank', [AdminDashboardController::class, 'editBankDetails'])->name('admin.settings.bank');

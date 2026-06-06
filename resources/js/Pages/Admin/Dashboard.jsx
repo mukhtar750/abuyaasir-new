@@ -8,9 +8,10 @@ import {
     Clock, PlayCircle
 } from 'lucide-react';
 
-export default function AdminDashboard({ auth, stats, tutors, pendingTutors = [], students, subjects, courses, pendingCourses = [], campaigns, allUsers, pendingTransactions }) {
+export default function AdminDashboard({ auth, stats, tutors = [], pendingTutors = [], students, subjects, courses, pendingCourses = [], campaigns, allUsers, pendingTransactions, sessions = [] }) {
     const { post, processing } = useForm();
     const [rejectNote, setRejectNote] = React.useState('');
+    const [selectedTutor, setSelectedTutor] = React.useState(null);
 
     const approveTutor = (id) => {
         if (confirm('Approve this tutor application?')) {
@@ -435,6 +436,14 @@ export default function AdminDashboard({ auth, stats, tutors, pendingTutors = []
                                                         {usr.name.charAt(0)}
                                                     </div>
                                                     <span className="font-semibold text-white">{usr.name}</span>
+                                                    {usr.role === 'tutor' && usr.is_approved && (
+                                                        <button 
+                                                            onClick={() => setSelectedTutor(tutors.find(t => t.id === usr.id))}
+                                                            className="ml-2 text-[10px] text-[#F4A623] hover:underline font-black uppercase tracking-tighter"
+                                                        >
+                                                            View Activity
+                                                        </button>
+                                                    )}
                                                 </td>
                                                 <td className="py-3.5 px-4 text-gray-300 font-mono text-xs">{usr.email}</td>
                                                 <td className="py-3.5 px-4">
@@ -564,7 +573,13 @@ export default function AdminDashboard({ auth, stats, tutors, pendingTutors = []
                                                 </div>
                                                 <div className="pt-4 flex items-center justify-between border-t border-white/5">
                                                     <span className="text-xs text-[#2ECC8C] font-black uppercase tracking-widest">&#8358;{parseFloat(course.price).toLocaleString()}</span>
-                                                    <div className="space-x-2">
+                                                    <div className="flex items-center space-x-2">
+                                                        <a 
+                                                            href={route('admin.cbt.questions.index', { exam: course.cbt_exams?.[0]?.id || 0 })}
+                                                            className="px-4 py-2 bg-white/5 text-white text-xs font-black rounded-xl hover:bg-white/10 transition"
+                                                        >
+                                                            Manage CBT
+                                                        </a>
                                                         <button 
                                                             onClick={() => approveCourse(course.id)}
                                                             disabled={processing}
@@ -914,7 +929,7 @@ export default function AdminDashboard({ auth, stats, tutors, pendingTutors = []
                                     <div className="space-y-3">
                                         <div className="flex justify-between">
                                             <span className="text-xs text-gray-500 uppercase font-bold tracking-tighter">Current Bank</span>
-                                            <span className="text-xs text-white font-medium italic">Pending Configuration...</span>
+                                            <span className="text-xs text-white font-medium italic">{stats.bank_name}</span>
                                         </div>
                                     </div>
                                 </div>

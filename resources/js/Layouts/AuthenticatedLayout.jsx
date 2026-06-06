@@ -45,13 +45,22 @@ export default function AuthenticatedLayout({ header, children }) {
                             {/* Role-based main Navigation Links */}
                             <div className="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                                 {user.role === 'admin' && (
-                                    <NavLink
-                                        href={route('admin.dashboard')}
-                                        active={route().current('admin.dashboard')}
-                                        className="text-white hover:text-[#F4A623] active:text-[#F4A623]"
-                                    >
-                                        Admin Center
-                                    </NavLink>
+                                    <>
+                                        <NavLink
+                                            href={route('admin.dashboard')}
+                                            active={route().current('admin.dashboard')}
+                                            className="text-white hover:text-[#F4A623] active:text-[#F4A623]"
+                                        >
+                                            Admin Center
+                                        </NavLink>
+                                        <NavLink
+                                            href={route('sessions.index')}
+                                            active={route().current('sessions.index')}
+                                            className="text-white hover:text-[#F4A623] active:text-[#F4A623]"
+                                        >
+                                            Timetable
+                                        </NavLink>
+                                    </>
                                 )}
                                 {user.role === 'tutor' && (
                                     <>
@@ -60,15 +69,17 @@ export default function AuthenticatedLayout({ header, children }) {
                                             active={route().current('tutor.dashboard')}
                                             className="text-white hover:text-[#F4A623] active:text-[#F4A623]"
                                         >
-                                            Tutor Workspace
+                                            {user.is_approved ? 'Tutor Workspace' : 'Portal'}
                                         </NavLink>
-                                        <NavLink
-                                            href={route('sessions.index')}
-                                            active={route().current('sessions.index')}
-                                            className="text-white hover:text-[#F4A623] active:text-[#F4A623]"
-                                        >
-                                            Live Classes
-                                        </NavLink>
+                                        {user.is_approved && (
+                                            <NavLink
+                                                href={route('sessions.index')}
+                                                active={route().current('sessions.index')}
+                                                className="text-white hover:text-[#F4A623] active:text-[#F4A623]"
+                                            >
+                                                Live Classes
+                                            </NavLink>
+                                        )}
                                     </>
                                 )}
                                 {user.role === 'student' && (
@@ -183,15 +194,17 @@ export default function AuthenticatedLayout({ header, children }) {
                                     active={route().current('tutor.dashboard')}
                                     className="text-white"
                                 >
-                                    Tutor Workspace
+                                    {user.is_approved ? 'Tutor Workspace' : 'Portal'}
                                 </ResponsiveNavLink>
-                                <ResponsiveNavLink
-                                    href={route('sessions.index')}
-                                    active={route().current('sessions.index')}
-                                    className="text-white"
-                                >
-                                    Live Classes
-                                </ResponsiveNavLink>
+                                {user.is_approved && (
+                                    <ResponsiveNavLink
+                                        href={route('sessions.index')}
+                                        active={route().current('sessions.index')}
+                                        className="text-white"
+                                    >
+                                        Live Classes
+                                    </ResponsiveNavLink>
+                                )}
                             </>
                         )}
                         {user.role === 'admin' && (

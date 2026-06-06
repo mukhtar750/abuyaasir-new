@@ -44,8 +44,9 @@ class AssignmentController extends Controller
 
     public function showSubmit(Assignment $assignment)
     {
+        $userId = auth()->id();
         $submission = AssignmentSubmission::where('assignment_id', $assignment->id)
-            ->where('student_id', auth()->id())
+            ->where('student_id', $userId)
             ->first();
 
         return Inertia::render('Student/Assignments/Submit', [
@@ -62,8 +63,9 @@ class AssignmentController extends Controller
 
         $path = $request->file('file')->store('submissions', 'public');
 
+        $userId = auth()->id();
         AssignmentSubmission::updateOrCreate(
-            ['assignment_id' => $assignment->id, 'student_id' => auth()->id()],
+            ['assignment_id' => $assignment->id, 'student_id' => $userId],
             ['file_path' => $path]
         );
 

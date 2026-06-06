@@ -24,24 +24,23 @@ class AdminDashboardController extends Controller
             'total_subjects' => Subject::count(),
             'pending_payments' => Transaction::where('status', 'pending')->count(),
             'maintenance_mode' => Setting::get('maintenance_mode', 'false') === 'true',
-            'total_sessions' => \App\Models\LiveSession::count(),
-            'completed_sessions' => \App\Models\LiveSession::where('status', 'completed')->count(),
+            'bank_name' => Setting::get('bank_name', 'Not Configured'),
         ];
 
         // 2. Fetch Lists for Admin Controls
-        $tutors = User::where('role', 'tutor')->where('is_approved', true)->get();
+        $tutors = User::where('role', 'tutor')->where('is_approved', true)->with(['courses.enrollments.student', 'subjects', 'tutorSessions'])->get();
         $pendingTutors = User::where('role', 'tutor')->where('is_approved', false)->get();
         $students = User::where('role', 'student')->get();
         $subjects = Subject::with('tutors')->get();
-        $courses = Course::with(['subject', 'lessons'])->where('is_approved', true)->get();
-        $pendingCourses = Course::with(['subject', 'lessons', 'tutors'])->where('is_approved', false)->get();
+        $courses = Course::with(['subject', 'lessons', 'cbtExams'])->where('is_approved', true)->get();
+        $pendingCourses = Course::with(['subject', 'lessons', 'tutors', 'cbtExams'])->where('is_approved', false)->get();
         $campaigns = Campaign::latest()->get();
         $allUsers = User::orderBy('name')->get();
         $pendingTransactions = Transaction::with(['user', 'course'])
             ->where('status', 'pending')
             ->latest()
             ->get();
-        $sessions = \App\Models\LiveSession::with(['tutor', 'student', 'course', 'attendances', 'recordings'])
+        $sessions = \App\Models\LiveSession::with(['tutor', 'student', 'course'])
             ->orderBy('scheduled_at', 'desc')
             ->get();
 
@@ -64,7 +63,15 @@ class AdminDashboardController extends Controller
     public function approveTutor(User $user)
     {
         $user->update(['is_approved' => true]);
-        return redirect()->back()->with('message', "Tutor {$user->name} has been approved.");
+        
+        // Notify Tutor via Email
+        try {
+            \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\TutorApprovedMail($user));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to send approval mail to tutor: " . $e->getMessage());
+        }
+
+        return redirect()->back()->with('message', "Tutor {$user->name} has been approved and notified.");
     }
 
     // Admin Action: Reject Tutor Application
@@ -184,8 +191,11 @@ class AdminDashboardController extends Controller
             'role' => 'required|in:student,tutor,admin',
         ]);
         
+        /** @var \App\Models\User $currentUser */
+        $currentUser = auth()->user();
+
         // Prevent self-demotion from admin
-        if ($user->id === auth()->id() && $request->role !== 'admin') {
+        if ($user->id === $currentUser->id && $request->role !== 'admin') {
             return redirect()->back()->with('error', 'You cannot change your own admin role.');
         }
 
@@ -229,7 +239,7 @@ class AdminDashboardController extends Controller
     }
 
     // Admin Action: Quick Toggle Campaign Status
-    public function toggleCampaignStatus(Request $request, Campaign $campaign)
+    public function toggleCampaignStatus(Campaign $campaign)
     {
         $campaign->is_active = !$campaign->is_active;
         $campaign->save();

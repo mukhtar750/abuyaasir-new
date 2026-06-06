@@ -17,6 +17,7 @@ class LiveSessionController extends Controller
 {
     public function index()
     {
+        /** @var \App\Models\User $user */
         $user = auth()->user();
         
         if ($user->role === 'admin') {
@@ -62,6 +63,7 @@ class LiveSessionController extends Controller
 
     public function store(StoreLiveSessionRequest $request)
     {
+        /** @var \App\Models\User $user */
         $user = auth()->user();
         
         if ($user->role === 'admin') {
@@ -120,7 +122,10 @@ class LiveSessionController extends Controller
 
     public function join(LiveSession $session)
     {
-        if (!$this->canAccessSession(auth()->user(), $session)) {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        if (!$this->canAccessSession($user, $session)) {
             abort(403, 'You are not authorized to join this session.');
         }
 
@@ -196,6 +201,7 @@ class LiveSessionController extends Controller
 
     public function destroy(LiveSession $session)
     {
+        /** @var \App\Models\User $user */
         $user = auth()->user();
         if ($user->role !== 'admin' && $user->id !== $session->tutor_id) {
             abort(403, 'Unauthorized action.');
@@ -215,6 +221,7 @@ class LiveSessionController extends Controller
 
     public function submitAttendance(Request $request, LiveSession $session)
     {
+        /** @var \App\Models\User $user */
         $user = auth()->user();
         if ($user->role !== 'admin' && $user->id !== $session->tutor_id) {
             abort(403, 'Unauthorized action.');
@@ -271,7 +278,10 @@ class LiveSessionController extends Controller
 
     public function unlockAttendance(LiveSession $session)
     {
-        if (auth()->user()->role !== 'admin') {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        if ($user->role !== 'admin') {
             abort(403, 'Only administrators can unlock attendance.');
         }
 
@@ -291,6 +301,7 @@ class LiveSessionController extends Controller
 
     public function uploadRecording(Request $request, LiveSession $session)
     {
+        /** @var \App\Models\User $user */
         $user = auth()->user();
         if ($user->role !== 'admin' && $user->id !== $session->tutor_id) {
             abort(403, 'Unauthorized action.');

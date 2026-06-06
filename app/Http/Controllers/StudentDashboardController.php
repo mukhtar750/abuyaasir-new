@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Course;
-use App\Models\Subject;
 use App\Models\Enrollment;
 use App\Models\Campaign;
 use App\Models\CbtExam;
@@ -16,6 +14,7 @@ class StudentDashboardController extends Controller
 {
     public function index()
     {
+        /** @var \App\Models\User $user */
         $user = auth()->user();
 
         if ($user->isAdmin()) {
@@ -103,6 +102,7 @@ class StudentDashboardController extends Controller
 
     public function enrollSelf($id)
     {
+        /** @var \App\Models\User $user */
         $user = auth()->user();
         $course = Course::findOrFail($id);
 

@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureRole::class,
+            'approved_tutor' => \App\Http\Middleware\EnsureTutorIsApproved::class,
         ]);
 
         $middleware->web(append: [

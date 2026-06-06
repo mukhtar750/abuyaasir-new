@@ -3,10 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Transaction;
-use App\Models\Course;
 use App\Models\Enrollment;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ManualPaymentController extends Controller
@@ -22,8 +20,10 @@ class ManualPaymentController extends Controller
             'receipt' => 'required|image|mimes:jpeg,png,jpg,pdf|max:2048',
         ]);
 
+        $userId = auth()->id();
+
         // Prevent duplicate pending submissions for the same course
-        $existing = Transaction::where('user_id', auth()->id())
+        $existing = Transaction::where('user_id', $userId)
             ->where('course_id', $request->course_id)
             ->where('status', 'pending')
             ->first();
@@ -35,7 +35,7 @@ class ManualPaymentController extends Controller
         $path = $request->file('receipt')->store('receipts', 'public');
 
         Transaction::create([
-            'user_id' => auth()->id(),
+            'user_id' => $userId,
             'course_id' => $request->course_id,
             'amount' => $request->amount,
             'type' => 'payment',
@@ -53,7 +53,10 @@ class ManualPaymentController extends Controller
      */
     public function approve(Transaction $transaction)
     {
-        if (auth()->user()->role !== 'admin') {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        if ($user->role !== 'admin') {
             abort(403);
         }
 
@@ -79,7 +82,10 @@ class ManualPaymentController extends Controller
      */
     public function reject(Request $request, Transaction $transaction)
     {
-        if (auth()->user()->role !== 'admin') {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        if ($user->role !== 'admin') {
             abort(403);
         }
 

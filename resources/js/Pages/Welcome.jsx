@@ -84,11 +84,15 @@ export default function Welcome({ auth, campaigns }) {
                             Teach on MyTutorPlus
                         </Link>
                         {auth.user ? (
-                            <Link href={route('dashboard')} className="group relative px-6 py-2.5 font-bold text-white rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all overflow-hidden">
-                                <span className="relative z-10 flex items-center">
-                                    Enter Portal <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                                </span>
-                                <div className="absolute inset-0 bg-gradient-to-r from-[#2ECC8C]/20 to-[#1A3C5E]/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <Link
+                                href={
+                                    auth.user.role === 'admin' 
+                                        ? route('admin.dashboard') 
+                                        : (auth.user.role === 'tutor' ? route('tutor.dashboard') : route('dashboard'))
+                                }
+                                className="px-6 py-2.5 bg-[#F4A623] text-black font-black rounded-xl text-xs uppercase tracking-widest hover:bg-amber-400 transition shadow-lg shadow-amber-500/10"
+                            >
+                                Enter Portal
                             </Link>
                         ) : (
                             <>

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\CbtExam;
-use App\Models\CbtQuestion;
 use App\Models\CbtResult;
 use Inertia\Inertia;
 
@@ -15,6 +14,7 @@ class CbtController extends Controller
     // Start taking a CBT exam
     public function takeExam(CbtExam $exam)
     {
+        /** @var \App\Models\User $user */
         $user = auth()->user();
 
         // Safety: verify student is enrolled in the course associated with this CBT
@@ -35,6 +35,7 @@ class CbtController extends Controller
             'time_spent_seconds' => 'required|integer',
         ]);
 
+        /** @var \App\Models\User $user */
         $user = auth()->user();
 
         $questions = $exam->questions;
@@ -74,6 +75,7 @@ class CbtController extends Controller
     // Download PDF Certificate of CBT Performance
     public function downloadPdf(CbtResult $result)
     {
+        /** @var \App\Models\User $user */
         $user = auth()->user();
 
         // Safety: verify student is the owner of the result or is an Admin

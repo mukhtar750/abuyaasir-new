@@ -18,6 +18,13 @@ class CbtQuestionController extends Controller
 
     public function store(Request $request, CbtExam $exam)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        if ($user->role !== 'admin' && $user->role !== 'tutor') {
+            abort(403);
+        }
+
         $request->validate([
             'question_text' => 'required|string',
             'options' => 'required|array|min:2',
@@ -36,6 +43,13 @@ class CbtQuestionController extends Controller
 
     public function import(Request $request, CbtExam $exam)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        if ($user->role !== 'admin' && $user->role !== 'tutor') {
+            abort(403);
+        }
+
         $request->validate([
             'csv_file' => 'required|file|mimes:csv,txt'
         ]);

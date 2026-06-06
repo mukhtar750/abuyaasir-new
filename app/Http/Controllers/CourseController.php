@@ -39,9 +39,10 @@ class CourseController extends Controller
     {
         $course->load(['lessons', 'subject']);
         
-        $enrollment = $course->enrollments()->where('student_id', auth()->id())->firstOrFail();
+        $userId = auth()->id();
+        $enrollment = $course->enrollments()->where('student_id', $userId)->firstOrFail();
 
-        $completedLessonIds = LessonProgress::where('user_id', auth()->id())
+        $completedLessonIds = LessonProgress::where('user_id', $userId)
             ->whereIn('lesson_id', $course->lessons->pluck('id'))
             ->pluck('lesson_id')
             ->toArray();
@@ -60,8 +61,9 @@ class CourseController extends Controller
         ]);
     }
 
-    public function completeLesson(Request $request, Course $course, Lesson $lesson)
+    public function completeLesson(Course $course, Lesson $lesson)
     {
+        /** @var \App\Models\User $user */
         $user = auth()->user();
 
         LessonProgress::firstOrCreate([

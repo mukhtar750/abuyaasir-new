@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Subject;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Enrollment;
@@ -13,7 +12,15 @@ class TutorDashboardController extends Controller
 {
     public function index()
     {
+        /** @var \App\Models\User $tutor */
         $tutor = auth()->user();
+
+        // 0. Handle Unapproved Tutors - Show pending UI instead of crashing/blank
+        if (!$tutor->is_approved) {
+            return Inertia::render('Tutor/PendingApproval', [
+                'adminNote' => $tutor->admin_note,
+            ]);
+        }
 
         // 1. Get subjects assigned to this tutor by Admin
         $subjects = $tutor->subjects()->get();
@@ -62,6 +69,7 @@ class TutorDashboardController extends Controller
         ]);
 
         // Verify tutor is actually mapped to this subject
+        /** @var \App\Models\User $tutor */
         $tutor = auth()->user();
         if (!$tutor->subjects()->where('subjects.id', $request->subject_id)->exists()) {
             return redirect()->back()->withErrors(['subject_id' => 'You are not assigned to teach this subject.']);
@@ -93,6 +101,7 @@ class TutorDashboardController extends Controller
         $course = Course::findOrFail($request->course_id);
 
         // Verify tutor teaches this course's subject
+        /** @var \App\Models\User $tutor */
         $tutor = auth()->user();
         if (!$tutor->subjects()->where('subjects.id', $course->subject_id)->exists()) {
             return redirect()->back()->withErrors(['course_id' => 'You do not own this course.']);

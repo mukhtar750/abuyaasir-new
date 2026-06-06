@@ -72,13 +72,22 @@ export default function AuthenticatedLayout({ header, children }) {
                                             {user.is_approved ? 'Tutor Workspace' : 'Portal'}
                                         </NavLink>
                                         {user.is_approved && (
-                                            <NavLink
-                                                href={route('sessions.index')}
-                                                active={route().current('sessions.index')}
-                                                className="text-white hover:text-[#F4A623] active:text-[#F4A623]"
-                                            >
-                                                Live Classes
-                                            </NavLink>
+                                            <>
+                                                <NavLink
+                                                    href={route('sessions.index')}
+                                                    active={route().current('sessions.index')}
+                                                    className="text-white hover:text-[#F4A623] active:text-[#F4A623]"
+                                                >
+                                                    Live Classes
+                                                </NavLink>
+                                                <NavLink
+                                                    href={route('tutor.assignments.index')}
+                                                    active={route().current('tutor.assignments.index')}
+                                                    className="text-white hover:text-[#F4A623] active:text-[#F4A623]"
+                                                >
+                                                    Assignments
+                                                </NavLink>
+                                            </>
                                         )}
                                     </>
                                 )}
@@ -197,13 +206,22 @@ export default function AuthenticatedLayout({ header, children }) {
                                     {user.is_approved ? 'Tutor Workspace' : 'Portal'}
                                 </ResponsiveNavLink>
                                 {user.is_approved && (
-                                    <ResponsiveNavLink
-                                        href={route('sessions.index')}
-                                        active={route().current('sessions.index')}
-                                        className="text-white"
-                                    >
-                                        Live Classes
-                                    </ResponsiveNavLink>
+                                    <>
+                                        <ResponsiveNavLink
+                                            href={route('sessions.index')}
+                                            active={route().current('sessions.index')}
+                                            className="text-white"
+                                        >
+                                            Live Classes
+                                        </ResponsiveNavLink>
+                                        <ResponsiveNavLink
+                                            href={route('tutor.assignments.index')}
+                                            active={route().current('tutor.assignments.index')}
+                                            className="text-white"
+                                        >
+                                            Assignments
+                                        </ResponsiveNavLink>
+                                    </>
                                 )}
                             </>
                         )}

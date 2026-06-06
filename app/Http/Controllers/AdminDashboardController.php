@@ -10,6 +10,7 @@ use App\Models\Enrollment;
 use App\Models\Campaign;
 use App\Models\Setting;
 use App\Models\Transaction;
+use App\Models\LiveSession;
 use Inertia\Inertia;
 
 class AdminDashboardController extends Controller
@@ -40,7 +41,7 @@ class AdminDashboardController extends Controller
             ->where('status', 'pending')
             ->latest()
             ->get();
-        $sessions = \App\Models\LiveSession::with(['tutor', 'student', 'course'])
+        $sessions = LiveSession::with(['tutor', 'student', 'course'])
             ->orderBy('scheduled_at', 'desc')
             ->get();
 
@@ -114,6 +115,30 @@ class AdminDashboardController extends Controller
         Subject::create($request->only('name', 'description'));
 
         return redirect()->back()->with('message', 'Subject created successfully.');
+    }
+
+    // Admin Action: Create a Course
+    public function createCourse(Request $request)
+    {
+        $request->validate([
+            'subject_id' => 'required|exists:subjects,id',
+            'title' => 'required|string',
+            'description' => 'nullable|string',
+            'type' => 'required|string', // Standard, JAMB, WAEC, Summer
+            'price' => 'required|numeric|min:0',
+        ]);
+
+        Course::create([
+            'subject_id' => $request->subject_id,
+            'title' => $request->title,
+            'description' => $request->description,
+            'type' => $request->type,
+            'price' => $request->price,
+            'is_approved' => true, // Admin created courses are auto-approved
+            'is_published' => true,
+        ]);
+
+        return redirect()->back()->with('message', 'Course created successfully.');
     }
 
     // Admin Action: Map a Tutor to a Subject

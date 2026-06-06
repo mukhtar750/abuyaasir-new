@@ -57,36 +57,6 @@ class TutorDashboardController extends Controller
         ]);
     }
 
-    // Tutor Action: Create a course under their assigned subjects
-    public function createCourse(Request $request)
-    {
-        $request->validate([
-            'subject_id' => 'required|exists:subjects,id',
-            'title' => 'required|string',
-            'description' => 'nullable|string',
-            'type' => 'required|string', // Standard, JAMB, WAEC, Summer
-            'price' => 'required|numeric|min:0',
-        ]);
-
-        // Verify tutor is actually mapped to this subject
-        /** @var \App\Models\User $tutor */
-        $tutor = auth()->user();
-        if (!$tutor->subjects()->where('subjects.id', $request->subject_id)->exists()) {
-            return redirect()->back()->withErrors(['subject_id' => 'You are not assigned to teach this subject.']);
-        }
-
-        Course::create([
-            'subject_id' => $request->subject_id,
-            'title' => $request->title,
-            'description' => $request->description,
-            'type' => $request->type,
-            'price' => $request->price,
-            'is_published' => true,
-        ]);
-
-        return redirect()->back()->with('message', 'Course created successfully.');
-    }
-
     // Tutor Action: Add a lesson to a course
     public function createLesson(Request $request)
     {

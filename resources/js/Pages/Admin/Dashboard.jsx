@@ -61,6 +61,7 @@ export default function AdminDashboard({ auth, stats, tutors = [], pendingTutors
     
     // Forms for Admin Actions
     const subjectForm = useForm({ name: '', description: '' });
+    const courseForm = useForm({ subject_id: '', title: '', description: '', type: 'Standard', price: 0 });
     const assignTutorForm = useForm({ subject_id: '', tutor_id: '' });
     const enrollStudentForm = useForm({ student_id: '', course_id: '' });
     const campaignForm = useForm({ title: '', type: 'General', link: '/dashboard', is_active: true });
@@ -73,6 +74,13 @@ export default function AdminDashboard({ auth, stats, tutors = [], pendingTutors
         e.preventDefault();
         subjectForm.post(route('admin.subject.create'), {
             onSuccess: () => subjectForm.reset(),
+        });
+    };
+
+    const submitCourse = (e) => {
+        e.preventDefault();
+        courseForm.post(route('admin.course.create'), {
+            onSuccess: () => courseForm.reset(),
         });
     };
 
@@ -653,7 +661,80 @@ export default function AdminDashboard({ auth, stats, tutors = [], pendingTutors
                                 </form>
                             </div>
 
-                            {/* 2. List of Active Subjects & Courses */}
+                            {/* 2. Create a New Course (Admin Only) */}
+                            <div className="bg-[#1A3C5E]/15 border border-white/5 p-6 rounded-2xl backdrop-blur-md shadow-lg hover:border-white/10 transition space-y-4">
+                                <h3 className="text-lg font-serif font-semibold text-white flex items-center">
+                                    <BookOpen className="w-5 h-5 mr-2 text-blue-400" />
+                                    Create New Course Definition
+                                </h3>
+                                <p className="text-xs text-gray-400">Administratively define a new course, set its pricing, and link it to a subject domain.</p>
+
+                                <form onSubmit={submitCourse} className="space-y-4 pt-2">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs text-gray-400 mb-2 font-medium">Subject Domain</label>
+                                            <select
+                                                value={courseForm.data.subject_id}
+                                                onChange={e => courseForm.setData('subject_id', e.target.value)}
+                                                className="w-full bg-[#0D1B2A]/50 border border-white/10 focus:border-blue-400 focus:ring-blue-400 rounded-xl px-4 py-2.5 text-xs text-white transition"
+                                                required
+                                            >
+                                                <option value="">-- Choose Subject --</option>
+                                                {subjects.map(sub => (
+                                                    <option key={sub.id} value={sub.id}>{sub.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs text-gray-400 mb-2 font-medium">Class Type / Scope</label>
+                                            <select
+                                                value={courseForm.data.type}
+                                                onChange={e => courseForm.setData('type', e.target.value)}
+                                                className="w-full bg-[#0D1B2A]/50 border border-white/10 focus:border-blue-400 focus:ring-blue-400 rounded-xl px-4 py-2.5 text-xs text-white transition"
+                                            >
+                                                <option value="Standard">Standard Course</option>
+                                                <option value="JAMB">JAMB Preparation</option>
+                                                <option value="WAEC">WAEC Preparation</option>
+                                                <option value="Summer">Summer Bootcamp</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="md:col-span-2">
+                                            <label className="block text-xs text-gray-400 mb-2 font-medium">Course Title</label>
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. Inorganic Chemistry & Periodicity"
+                                                value={courseForm.data.title}
+                                                onChange={e => courseForm.setData('title', e.target.value)}
+                                                className="w-full bg-[#0D1B2A]/50 border border-white/10 focus:border-blue-400 focus:ring-blue-400 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 transition"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs text-gray-400 mb-2 font-medium">Price (NGN)</label>
+                                            <input
+                                                type="number"
+                                                placeholder="Price"
+                                                value={courseForm.data.price}
+                                                onChange={e => courseForm.setData('price', e.target.value)}
+                                                className="w-full bg-[#0D1B2A]/50 border border-white/10 focus:border-blue-400 focus:ring-blue-400 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 transition"
+                                                min="0"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={courseForm.processing}
+                                        className="px-5 py-2.5 bg-blue-500 hover:bg-blue-500/90 text-white font-bold rounded-xl text-xs transition duration-200 shadow-md shadow-blue-500/15 disabled:opacity-50"
+                                    >
+                                        Create Course
+                                    </button>
+                                </form>
+                            </div>
+
+                            {/* 3. List of Active Subjects & Courses */}
                             <div className="bg-[#1A3C5E]/15 border border-white/5 p-6 rounded-2xl backdrop-blur-md shadow-lg space-y-6">
                                 <div>
                                     <h3 className="text-lg font-serif font-semibold text-white">Platform Curriculum Map</h3>

@@ -91,7 +91,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // --- Tutor Operations ---
     Route::prefix('tutor')->middleware(['role:tutor', 'approved_tutor', \App\Http\Middleware\CheckMaintenanceMode::class])->group(function () {
         Route::get('/dashboard', [TutorDashboardController::class, 'index'])->name('tutor.dashboard');
-        Route::post('/courses', [TutorDashboardController::class, 'createCourse'])->name('tutor.course.create');
         Route::post('/lessons', [TutorDashboardController::class, 'createLesson'])->name('tutor.lesson.create');
         
         // --- Assignments & Questions ---
@@ -108,6 +107,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('admin')->middleware('role:admin')->group(function () {
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
         Route::post('/subjects', [AdminDashboardController::class, 'createSubject'])->name('admin.subject.create');
+        Route::post('/courses', [AdminDashboardController::class, 'createCourse'])->name('admin.course.create');
         Route::post('/assign-tutor', [AdminDashboardController::class, 'assignTutor'])->name('admin.tutor.assign');
         Route::post('/enroll', [AdminDashboardController::class, 'enrollStudent'])->name('admin.student.enroll');
         Route::post('/campaigns', [AdminDashboardController::class, 'saveCampaign'])->name('admin.campaign.save');

@@ -11,6 +11,17 @@ class CbtQuestionController extends Controller
 {
     public function index(CbtExam $exam)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        // Security check for tutors
+        if ($user->role === 'tutor') {
+            $course = $exam->course;
+            if (!$course || !$user->subjects()->where('subjects.id', $course->subject_id)->exists()) {
+                abort(403, 'You are not authorized to manage questions for this exam.');
+            }
+        }
+
         return Inertia::render('Tutor/Cbt/QuestionManager', [
             'exam' => $exam->load('questions')
         ]);
@@ -23,6 +34,14 @@ class CbtQuestionController extends Controller
 
         if ($user->role !== 'admin' && $user->role !== 'tutor') {
             abort(403);
+        }
+
+        // Security check for tutors
+        if ($user->role === 'tutor') {
+            $course = $exam->course;
+            if (!$course || !$user->subjects()->where('subjects.id', $course->subject_id)->exists()) {
+                abort(403, 'You are not authorized to manage questions for this exam.');
+            }
         }
 
         $request->validate([
@@ -48,6 +67,14 @@ class CbtQuestionController extends Controller
 
         if ($user->role !== 'admin' && $user->role !== 'tutor') {
             abort(403);
+        }
+
+        // Security check for tutors
+        if ($user->role === 'tutor') {
+            $course = $exam->course;
+            if (!$course || !$user->subjects()->where('subjects.id', $course->subject_id)->exists()) {
+                abort(403, 'You are not authorized to manage questions for this exam.');
+            }
         }
 
         $request->validate([

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Assignment;
 use App\Models\AssignmentSubmission;
+use App\Models\Course;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -11,7 +12,14 @@ class AssignmentController extends Controller
 {
     public function index()
     {
-        $assignments = Assignment::with(['course', 'submissions.student'])->get();
+        /** @var \App\Models\User $tutor */
+        $tutor = auth()->user();
+
+        // Tutors only see assignments for courses within their assigned subjects
+        $assignments = Assignment::whereHas('course', function($query) use ($tutor) {
+            $query->whereIn('subject_id', $tutor->subjects()->pluck('subjects.id'));
+        })->with(['course', 'submissions.student'])->get();
+
         return Inertia::render('Tutor/Assignments/Index', [
             'assignments' => $assignments
         ]);
@@ -27,11 +35,20 @@ class AssignmentController extends Controller
             'max_score' => 'required|integer',
         ]);
 
+        /** @var \App\Models\User $tutor */
+        $tutor = auth()->user();
+
+        // Verify tutor is assigned to the subject of this course
+        $course = Course::findOrFail($request->course_id);
+        if (!$tutor->subjects()->where('subjects.id', $course->subject_id)->exists()) {
+            abort(403, 'You are not authorized to create assignments for this course.');
+        }
+
         $assignment = Assignment::create($request->all());
 
         // Notify enrolled students
-        $course = \App\Models\Course::with('enrollments.user')->find($request->course_id);
-        if ($course) {
+        $course->load('enrollments.user');
+        if ($course->enrollments) {
             foreach ($course->enrollments as $enrollment) {
                 if ($enrollment->user) {
                     \Illuminate\Support\Facades\Mail::to($enrollment->user->email)->send(new \App\Mail\AssignmentPostedMail($assignment, $enrollment->user));

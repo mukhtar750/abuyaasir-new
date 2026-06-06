@@ -92,14 +92,22 @@ export default function Login({ status, canResetPassword }) {
                 </div>
 
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    {canResetPassword && (
+                    <div className="flex flex-col">
+                        {canResetPassword && (
+                            <Link
+                                href={route('password.request')}
+                                className="text-xs font-semibold text-[#F4A623] hover:text-[#f6b744]"
+                            >
+                                Forgot your password?
+                            </Link>
+                        )}
                         <Link
-                            href={route('password.request')}
-                            className="text-sm font-semibold text-[#F4A623] hover:text-[#f6b744]"
+                            href={route('register.tutor')}
+                            className="mt-1 text-xs font-semibold text-slate-400 hover:text-white"
                         >
-                            Forgot your password?
+                            Want to teach? Apply as a Tutor
                         </Link>
-                    )}
+                    </div>
 
                     <PrimaryButton className="w-full sm:w-auto" disabled={processing}>
                         <LogIn className="h-4 w-4" />

@@ -80,6 +80,9 @@ export default function Welcome({ auth, campaigns }) {
                         animate={{ opacity: 1, x: 0 }}
                         className="flex items-center space-x-6"
                     >
+                        <Link href={route('register.tutor')} className="text-xs font-black uppercase tracking-widest text-[#F4A623] hover:text-amber-400 transition hidden lg:block">
+                            Teach on MyTutorPlus
+                        </Link>
                         {auth.user ? (
                             <Link href={route('dashboard')} className="group relative px-6 py-2.5 font-bold text-white rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all overflow-hidden">
                                 <span className="relative z-10 flex items-center">

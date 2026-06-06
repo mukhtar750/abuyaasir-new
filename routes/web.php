@@ -31,7 +31,7 @@ Route::get('/', function () {
 });
 
 Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
-Route::get('/courses/{id}', [CourseController::class, 'show'])->name('courses.show');
+Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
 
 // 2. Developer/Maintenance Bypass Route
 Route::get('/dev-bypass', function (\Illuminate\Http\Request $request) {
@@ -69,20 +69,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // --- Student Dashboard ---
     Route::middleware('role:student')->group(function () {
         Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('dashboard');
-        Route::post('/courses/{id}/enroll', [StudentDashboardController::class, 'enrollSelf'])->name('student.course.enroll');
+        Route::post('/courses/{course}/enroll', [StudentDashboardController::class, 'enrollSelf'])->name('student.course.enroll');
 
         // --- Learning Hub ---
-        Route::get('/courses/{id}/learn', [CourseController::class, 'learn'])->name('courses.learn');
-        Route::post('/courses/{id}/lessons/{lesson_id}/complete', [CourseController::class, 'completeLesson'])->name('courses.completeLesson');
+        Route::get('/courses/{course}/learn', [CourseController::class, 'learn'])->name('courses.learn');
+        Route::post('/courses/{course}/lessons/{lesson}/complete', [CourseController::class, 'completeLesson'])->name('courses.completeLesson');
 
         // --- Assignments ---
-        Route::get('/assignments/{id}/submit', [AssignmentController::class, 'showSubmit'])->name('student.assignments.show');
-        Route::post('/assignments/{id}/submit', [AssignmentController::class, 'submit'])->name('student.assignments.submit');
+        Route::get('/assignments/{assignment}/submit', [AssignmentController::class, 'showSubmit'])->name('student.assignments.submit');
+        Route::post('/assignments/{assignment}/submit', [AssignmentController::class, 'submit'])->name('student.assignments.store');
 
         // --- CBT Exam taking ---
-        Route::get('/cbt/{id}/take', [CbtController::class, 'takeExam'])->name('cbt.take');
-        Route::post('/cbt/{id}/submit', [CbtController::class, 'submitExam'])->name('cbt.submit');
-        Route::get('/cbt/results/{id}/pdf', [CbtController::class, 'downloadPdf'])->name('cbt.result.pdf');
+        Route::get('/cbt/{exam}/take', [CbtController::class, 'takeExam'])->name('cbt.take');
+        Route::post('/cbt/{exam}/submit', [CbtController::class, 'submitExam'])->name('cbt.submit');
+        Route::get('/cbt/results/{result}/pdf', [CbtController::class, 'downloadPdf'])->name('cbt.result.pdf');
 
         // --- Manual Payment ---
         Route::post('/payment/upload-receipt', [ManualPaymentController::class, 'submitReceipt'])->name('payment.upload-receipt');
@@ -97,11 +97,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // --- Assignments & Questions ---
         Route::get('/assignments', [AssignmentController::class, 'index'])->name('tutor.assignments.index');
         Route::post('/assignments', [AssignmentController::class, 'store'])->name('tutor.assignments.store');
-        Route::post('/assignments/submissions/{id}/grade', [AssignmentController::class, 'grade'])->name('tutor.assignments.grade');
+        Route::post('/assignments/submissions/{submission}/grade', [AssignmentController::class, 'grade'])->name('tutor.assignments.grade');
         
-        Route::get('/cbt-exams/{examId}/questions', [CbtQuestionController::class, 'index'])->name('tutor.cbt.questions.index');
-        Route::post('/cbt-exams/{examId}/questions', [CbtQuestionController::class, 'store'])->name('tutor.cbt.questions.store');
-        Route::post('/cbt-exams/{examId}/questions/import', [CbtQuestionController::class, 'import'])->name('tutor.cbt.questions.import');
+        Route::get('/cbt-exams/{exam}/questions', [CbtQuestionController::class, 'index'])->name('tutor.cbt.questions.index');
+        Route::post('/cbt-exams/{exam}/questions', [CbtQuestionController::class, 'store'])->name('tutor.cbt.questions.store');
+        Route::post('/cbt-exams/{exam}/questions/import', [CbtQuestionController::class, 'import'])->name('tutor.cbt.questions.import');
     });
 
     // --- Admin Operations ---
@@ -112,23 +112,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/enroll', [AdminDashboardController::class, 'enrollStudent'])->name('admin.student.enroll');
         Route::post('/campaigns', [AdminDashboardController::class, 'saveCampaign'])->name('admin.campaign.save');
         Route::post('/maintenance', [AdminDashboardController::class, 'toggleMaintenance'])->name('admin.maintenance.toggle');
-        Route::post('/users/{id}/role', [AdminDashboardController::class, 'updateUserRole'])->name('admin.user.role');
-        Route::post('/users/{id}/password', [AdminDashboardController::class, 'resetUserPassword'])->name('admin.user.password');
-        Route::delete('/users/{id}', [AdminDashboardController::class, 'deleteUser'])->name('admin.user.delete');
-        Route::delete('/subjects/{id}', [AdminDashboardController::class, 'deleteSubject'])->name('admin.subject.delete');
-        Route::post('/campaigns/{id}/toggle', [AdminDashboardController::class, 'toggleCampaignStatus'])->name('admin.campaign.toggle');
-        Route::delete('/campaigns/{id}', [AdminDashboardController::class, 'deleteCampaign'])->name('admin.campaign.delete');
+        Route::post('/users/{user}/role', [AdminDashboardController::class, 'updateUserRole'])->name('admin.user.role');
+        Route::post('/users/{user}/password', [AdminDashboardController::class, 'resetUserPassword'])->name('admin.user.password');
+        Route::delete('/users/{user}', [AdminDashboardController::class, 'deleteUser'])->name('admin.user.delete');
+        Route::delete('/subjects/{subject}', [AdminDashboardController::class, 'deleteSubject'])->name('admin.subject.delete');
+        Route::post('/campaigns/{campaign}/toggle', [AdminDashboardController::class, 'toggleCampaignStatus'])->name('admin.campaign.toggle');
+        Route::delete('/campaigns/{campaign}', [AdminDashboardController::class, 'deleteCampaign'])->name('admin.campaign.delete');
 
         // --- CBT Questions Management ---
-        Route::get('/cbt-exams/{examId}/questions', [CbtQuestionController::class, 'index'])->name('admin.cbt.questions.index');
-        Route::post('/cbt-exams/{examId}/questions', [CbtQuestionController::class, 'store'])->name('admin.cbt.questions.store');
-        Route::post('/cbt-exams/{examId}/questions/import', [CbtQuestionController::class, 'import'])->name('admin.cbt.questions.import');
+        Route::get('/cbt-exams/{exam}/questions', [CbtQuestionController::class, 'index'])->name('admin.cbt.questions.index');
+        Route::post('/cbt-exams/{exam}/questions', [CbtQuestionController::class, 'store'])->name('admin.cbt.questions.store');
+        Route::post('/cbt-exams/{exam}/questions/import', [CbtQuestionController::class, 'import'])->name('admin.cbt.questions.import');
 
         // --- Payment Management ---
         Route::post('/payments/{transaction}/approve', [ManualPaymentController::class, 'approve'])->name('admin.payments.approve');
-        Route::get('/settings/bank/edit', [AdminDashboardController::class, 'editBankDetails'])->name('admin.settings.bank.edit');
+        Route::post('/payments/{transaction}/reject', [ManualPaymentController::class, 'reject'])->name('admin.payments.reject');
+        
+        // --- Tutor & Course Approvals ---
+        Route::post('/admin/tutors/{user}/approve', [AdminDashboardController::class, 'approveTutor'])->name('admin.tutors.approve');
+        Route::post('/admin/tutors/{user}/reject', [AdminDashboardController::class, 'rejectTutor'])->name('admin.tutors.reject');
+        Route::post('/admin/courses/{course}/approve', [AdminDashboardController::class, 'approveCourse'])->name('admin.courses.approve');
+        Route::post('/admin/courses/{course}/reject', [AdminDashboardController::class, 'rejectCourse'])->name('admin.courses.reject');
+
         // Bank Details Management
-        Route::get('/settings/bank', [AdminDashboardController::class, 'getBankDetails'])->name('admin.settings.bank.get');
+        Route::get('/settings/bank', [AdminDashboardController::class, 'editBankDetails'])->name('admin.settings.bank');
         Route::post('/settings/bank', [AdminDashboardController::class, 'updateBankDetails'])->name('admin.settings.bank.update');
 });
 });

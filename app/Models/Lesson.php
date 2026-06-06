@@ -15,6 +15,11 @@ class Lesson extends Model
         'video_url',
         'content',
         'order_index',
+        'resources',
+    ];
+
+    protected $casts = [
+        'resources' => 'array',
     ];
 
     public function course()

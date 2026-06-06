@@ -9,15 +9,14 @@ use Inertia\Inertia;
 
 class CbtQuestionController extends Controller
 {
-    public function index($examId)
+    public function index(CbtExam $exam)
     {
-        $exam = CbtExam::with('questions')->findOrFail($examId);
         return Inertia::render('Tutor/Cbt/QuestionManager', [
-            'exam' => $exam
+            'exam' => $exam->load('questions')
         ]);
     }
 
-    public function store(Request $request, $examId)
+    public function store(Request $request, CbtExam $exam)
     {
         $request->validate([
             'question_text' => 'required|string',
@@ -26,7 +25,7 @@ class CbtQuestionController extends Controller
         ]);
 
         CbtQuestion::create([
-            'cbt_exam_id' => $examId,
+            'cbt_exam_id' => $exam->id,
             'question_text' => $request->question_text,
             'options' => $request->options,
             'correct_option' => $request->correct_option,
@@ -35,7 +34,7 @@ class CbtQuestionController extends Controller
         return redirect()->back()->with('success', 'Question added successfully.');
     }
 
-    public function import(Request $request, $examId)
+    public function import(Request $request, CbtExam $exam)
     {
         $request->validate([
             'csv_file' => 'required|file|mimes:csv,txt'
@@ -48,7 +47,7 @@ class CbtQuestionController extends Controller
         foreach ($data as $row) {
             if (count($row) >= 6) {
                 CbtQuestion::create([
-                    'cbt_exam_id' => $examId,
+                    'cbt_exam_id' => $exam->id,
                     'question_text' => $row[0],
                     'options' => [
                         'A' => $row[1],

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { FileText, Download, PlayCircle, ExternalLink, Calendar, Users, CheckCircle } from 'lucide-react';
 
 export default function Learn({ auth, course, completedLessonIds, progressPercent, liveSessions = [] }) {
     const [activeLesson, setActiveLesson] = useState(course.lessons[0] || null);
@@ -76,9 +77,40 @@ export default function Learn({ auth, course, completedLessonIds, progressPercen
                                         </span>
                                     )}
                                 </div>
-                                <div className="prose dark:prose-invert max-w-none">
+                                <div className="prose dark:prose-invert max-w-none mb-12">
                                     <div dangerouslySetInnerHTML={{ __html: activeLesson.content || 'No additional content provided for this lesson.' }} />
                                 </div>
+
+                                {/* Downloadable Resources Section */}
+                                {activeLesson.resources && activeLesson.resources.length > 0 && (
+                                    <div className="mt-8 pt-8 border-t border-gray-100 dark:border-gray-800">
+                                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                                            <FileText className="w-5 h-5 mr-2 text-[#F4A623]" />
+                                            Downloadable Materials
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {activeLesson.resources.map((res, index) => (
+                                                <a 
+                                                    key={index}
+                                                    href={`/storage/${res.path}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-2xl hover:border-[#F4A623]/30 hover:bg-[#F4A623]/5 transition duration-200 group"
+                                                >
+                                                    <div className="flex items-center space-x-3">
+                                                        <div className="p-2 bg-white dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/10 group-hover:border-[#F4A623]/20">
+                                                            <FileText className="w-5 h-5 text-gray-400 group-hover:text-[#F4A623]" />
+                                                        </div>
+                                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate max-w-[180px]">
+                                                            {res.name}
+                                                        </span>
+                                                    </div>
+                                                    <Download className="w-4 h-4 text-gray-400 group-hover:text-[#F4A623]" />
+                                                </a>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </>
                     ) : (

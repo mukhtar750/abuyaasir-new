@@ -13,9 +13,8 @@ use Barryvdh\DomPDF\Facade\Pdf;
 class CbtController extends Controller
 {
     // Start taking a CBT exam
-    public function takeExam($id)
+    public function takeExam(CbtExam $exam)
     {
-        $exam = CbtExam::with(['questions', 'course.subject'])->findOrFail($id);
         $user = auth()->user();
 
         // Safety: verify student is enrolled in the course associated with this CBT
@@ -24,19 +23,18 @@ class CbtController extends Controller
         }
 
         return Inertia::render('Cbt/ExamSession', [
-            'exam' => $exam,
+            'exam' => $exam->load(['questions', 'course.subject']),
         ]);
     }
 
     // Submit CBT Answers and Grade
-    public function submitExam(Request $request, $id)
+    public function submitExam(Request $request, CbtExam $exam)
     {
         $request->validate([
             'answers' => 'required|array', // e.g. [question_id => "A", ...]
             'time_spent_seconds' => 'required|integer',
         ]);
 
-        $exam = CbtExam::with('questions')->findOrFail($id);
         $user = auth()->user();
 
         $questions = $exam->questions;
@@ -74,9 +72,8 @@ class CbtController extends Controller
     }
 
     // Download PDF Certificate of CBT Performance
-    public function downloadPdf($id)
+    public function downloadPdf(CbtResult $result)
     {
-        $result = CbtResult::with(['cbtExam.course.subject', 'student'])->findOrFail($id);
         $user = auth()->user();
 
         // Safety: verify student is the owner of the result or is an Admin

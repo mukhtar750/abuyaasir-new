@@ -22,6 +22,16 @@ class ManualPaymentController extends Controller
             'receipt' => 'required|image|mimes:jpeg,png,jpg,pdf|max:2048',
         ]);
 
+        // Prevent duplicate pending submissions for the same course
+        $existing = Transaction::where('user_id', auth()->id())
+            ->where('course_id', $request->course_id)
+            ->where('status', 'pending')
+            ->first();
+
+        if ($existing) {
+            return back()->withErrors(['duplicate' => 'You already have a pending verification for this course.']);
+        }
+
         $path = $request->file('receipt')->store('receipts', 'public');
 
         Transaction::create([

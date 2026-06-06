@@ -42,20 +42,19 @@ class AssignmentController extends Controller
         return redirect()->back()->with('success', 'Assignment created successfully.');
     }
 
-    public function showSubmit($id)
+    public function showSubmit(Assignment $assignment)
     {
-        $assignment = Assignment::with('course')->findOrFail($id);
-        $submission = AssignmentSubmission::where('assignment_id', $id)
+        $submission = AssignmentSubmission::where('assignment_id', $assignment->id)
             ->where('student_id', auth()->id())
             ->first();
 
         return Inertia::render('Student/Assignments/Submit', [
-            'assignment' => $assignment,
+            'assignment' => $assignment->load('course'),
             'submission' => $submission
         ]);
     }
 
-    public function submit(Request $request, $id)
+    public function submit(Request $request, Assignment $assignment)
     {
         $request->validate([
             'file' => 'required|file|max:10240' // 10MB max
@@ -64,21 +63,20 @@ class AssignmentController extends Controller
         $path = $request->file('file')->store('submissions', 'public');
 
         AssignmentSubmission::updateOrCreate(
-            ['assignment_id' => $id, 'student_id' => auth()->id()],
+            ['assignment_id' => $assignment->id, 'student_id' => auth()->id()],
             ['file_path' => $path]
         );
 
         return redirect()->back()->with('success', 'Assignment submitted successfully.');
     }
 
-    public function grade(Request $request, $submissionId)
+    public function grade(Request $request, AssignmentSubmission $submission)
     {
         $request->validate([
             'score' => 'required|integer|min:0',
             'feedback' => 'nullable|string'
         ]);
 
-        $submission = AssignmentSubmission::with(['student', 'assignment.course'])->findOrFail($submissionId);
         $submission->update([
             'score' => $request->score,
             'feedback' => $request->feedback

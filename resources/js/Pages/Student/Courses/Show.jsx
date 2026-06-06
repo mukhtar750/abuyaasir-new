@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
-export default function Show({ auth, course, bankAccountNumber }) {
+export default function Show({ auth, course, bankDetails }) {
     const [showModal, setShowModal] = useState(false);
     const { data, setData, post, processing, errors, reset } = useForm({
         course_id: course.id,
@@ -96,10 +96,19 @@ export default function Show({ auth, course, bankAccountNumber }) {
                                 <p className="text-sm text-gray-700 dark:text-gray-300">
                                     To enroll in <span className="text-[#1A3C5E] dark:text-[#2ECC8C] font-bold">{course.title}</span>, please pay <span className="font-bold text-lg text-[#F4A623]">₦{Number(course.price).toLocaleString()}</span> to the bank details below and upload your receipt.
                                 </p>
-                                <div className="mt-4 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                                    <p className="text-xs text-gray-500 uppercase tracking-wider font-bold mb-1">Bank Details</p>
-                                    <p className="font-mono text-gray-900 dark:text-white font-bold tracking-widest text-lg">{bankAccountNumber}</p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">GTBank - MyTutorPlus Ltd</p>
+                                <div className="mt-4 p-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-2">
+                                    <div className="flex justify-between">
+                                        <span className="text-[10px] text-gray-500 uppercase font-bold">Bank Name</span>
+                                        <span className="text-xs text-gray-900 dark:text-white font-bold">{bankDetails?.bank_name || 'N/A'}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-[10px] text-gray-500 uppercase font-bold">Account Name</span>
+                                        <span className="text-xs text-gray-900 dark:text-white font-bold">{bankDetails?.account_name || 'N/A'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center pt-1">
+                                        <span className="text-[10px] text-gray-500 uppercase font-bold">Account Number</span>
+                                        <span className="text-lg font-mono text-[#F4A623] font-black tracking-widest">{bankDetails?.account_number || '0000000000'}</span>
+                                    </div>
                                 </div>
                             </div>
 

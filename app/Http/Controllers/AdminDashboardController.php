@@ -29,10 +29,12 @@ class AdminDashboardController extends Controller
         ];
 
         // 2. Fetch Lists for Admin Controls
-        $tutors = User::where('role', 'tutor')->get();
+        $tutors = User::where('role', 'tutor')->where('is_approved', true)->get();
+        $pendingTutors = User::where('role', 'tutor')->where('is_approved', false)->get();
         $students = User::where('role', 'student')->get();
         $subjects = Subject::with('tutors')->get();
-        $courses = Course::with(['subject', 'lessons'])->get();
+        $courses = Course::with(['subject', 'lessons'])->where('is_approved', true)->get();
+        $pendingCourses = Course::with(['subject', 'lessons', 'tutors'])->where('is_approved', false)->get();
         $campaigns = Campaign::latest()->get();
         $allUsers = User::orderBy('name')->get();
         $pendingTransactions = Transaction::with(['user', 'course'])
@@ -46,14 +48,52 @@ class AdminDashboardController extends Controller
         return Inertia::render('Admin/Dashboard', [
             'stats' => $stats,
             'tutors' => $tutors,
+            'pendingTutors' => $pendingTutors,
             'students' => $students,
             'subjects' => $subjects,
             'courses' => $courses,
+            'pendingCourses' => $pendingCourses,
             'campaigns' => $campaigns,
             'allUsers' => $allUsers,
             'pendingTransactions' => $pendingTransactions,
             'sessions' => $sessions,
         ]);
+    }
+
+    // Admin Action: Approve Tutor Application
+    public function approveTutor(User $user)
+    {
+        $user->update(['is_approved' => true]);
+        return redirect()->back()->with('message', "Tutor {$user->name} has been approved.");
+    }
+
+    // Admin Action: Reject Tutor Application
+    public function rejectTutor(Request $request, User $user)
+    {
+        $request->validate(['note' => 'required|string']);
+        $user->update([
+            'is_approved' => false,
+            'admin_note' => $request->note
+        ]);
+        return redirect()->back()->with('message', "Tutor application for {$user->name} has been rejected.");
+    }
+
+    // Admin Action: Approve Course
+    public function approveCourse(Course $course)
+    {
+        $course->update(['is_approved' => true]);
+        return redirect()->back()->with('message', "Course '{$course->title}' has been approved.");
+    }
+
+    // Admin Action: Reject Course
+    public function rejectCourse(Request $request, Course $course)
+    {
+        $request->validate(['note' => 'required|string']);
+        $course->update([
+            'is_approved' => false,
+            'admin_note' => $request->note
+        ]);
+        return redirect()->back()->with('message', "Course '{$course->title}' has been rejected.");
     }
 
     // Admin Action: Create a Subject (e.g. Physics, Chemistry, Math)
@@ -138,13 +178,11 @@ class AdminDashboardController extends Controller
     }
 
     // Admin Action: Update User Role (e.g. promote Student to Tutor/Admin)
-    public function updateUserRole(Request $request, $id)
+    public function updateUserRole(Request $request, User $user)
     {
         $request->validate([
             'role' => 'required|in:student,tutor,admin',
         ]);
-
-        $user = User::findOrFail($id);
         
         // Prevent self-demotion from admin
         if ($user->id === auth()->id() && $request->role !== 'admin') {
@@ -158,10 +196,8 @@ class AdminDashboardController extends Controller
     }
 
     // Admin Action: Delete User Account (Suspension)
-    public function deleteUser($id)
+    public function deleteUser(User $user)
     {
-        $user = User::findOrFail($id);
-
         if ($user->id === auth()->id()) {
             return redirect()->back()->with('error', 'You cannot delete your own admin account.');
         }
@@ -172,13 +208,12 @@ class AdminDashboardController extends Controller
     }
 
     // Admin Action: Reset User Password manually
-    public function resetUserPassword(Request $request, $id)
+    public function resetUserPassword(Request $request, User $user)
     {
         $request->validate([
             'password' => 'required|string|min:8|confirmed',
         ]);
 
-        $user = User::findOrFail($id);
         $user->password = \Illuminate\Support\Facades\Hash::make($request->password);
         $user->save();
 
@@ -186,18 +221,16 @@ class AdminDashboardController extends Controller
     }
 
     // Admin Action: Delete Subject Category
-    public function deleteSubject($id)
+    public function deleteSubject(Subject $subject)
     {
-        $subject = Subject::findOrFail($id);
         $subject->delete();
 
         return redirect()->back()->with('message', 'Subject deleted successfully.');
     }
 
     // Admin Action: Quick Toggle Campaign Status
-    public function toggleCampaignStatus(Request $request, $id)
+    public function toggleCampaignStatus(Request $request, Campaign $campaign)
     {
-        $campaign = Campaign::findOrFail($id);
         $campaign->is_active = !$campaign->is_active;
         $campaign->save();
 
@@ -206,9 +239,8 @@ class AdminDashboardController extends Controller
     }
 
     // Admin Action: Delete Campaign
-    public function deleteCampaign($id)
+    public function deleteCampaign(Campaign $campaign)
     {
-        $campaign = Campaign::findOrFail($id);
         $campaign->delete();
 
         return redirect()->back()->with('message', 'Campaign deleted successfully.');
@@ -218,6 +250,8 @@ class AdminDashboardController extends Controller
     public function getBankDetails()
     {
         return response()->json([
+            'bank_name' => Setting::get('bank_name', 'Not Set'),
+            'account_name' => Setting::get('account_name', 'Not Set'),
             'account_number' => Setting::get('bank_account_number', '0123456789'),
         ]);
     }
@@ -226,18 +260,28 @@ class AdminDashboardController extends Controller
     public function updateBankDetails(Request $request)
     {
         $request->validate([
+            'bank_name' => 'required|string|max:100',
+            'account_name' => 'required|string|max:100',
             'account_number' => 'required|string|max:50',
+            'support_whatsapp' => 'nullable|string|max:20',
         ]);
+        
+        Setting::set('bank_name', $request->bank_name);
+        Setting::set('account_name', $request->account_name);
         Setting::set('bank_account_number', $request->account_number);
-        return response()->json(['message' => 'Bank details updated successfully.'], 200);
+        Setting::set('support_whatsapp', $request->support_whatsapp);
+
+        return redirect()->back()->with('message', 'Platform settings updated successfully.');
     }
 
     // Admin UI: Edit Bank Details Page
     public function editBankDetails()
     {
-        $accountNumber = Setting::get('bank_account_number', '0123456789');
         return Inertia::render('Admin/BankSettings', [
-            'accountNumber' => $accountNumber,
+            'bankName' => Setting::get('bank_name', ''),
+            'accountName' => Setting::get('account_name', ''),
+            'accountNumber' => Setting::get('bank_account_number', ''),
+            'supportWhatsapp' => Setting::get('support_whatsapp', ''),
         ]);
     }
 

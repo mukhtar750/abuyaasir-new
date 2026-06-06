@@ -1,14 +1,46 @@
 import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, router } from '@inertiajs/react';
+import { motion } from 'framer-motion';
 import { 
     Shield, Users, BookOpen, Layers, Plus, Check, RefreshCw, 
-    Sparkles, Trash2, ShieldAlert, Award, Flame, Megaphone, HelpCircle, Key 
+    Sparkles, Trash2, ShieldAlert, Award, Flame, Megaphone, HelpCircle, Key,
+    Clock, PlayCircle
 } from 'lucide-react';
 
-export default function AdminDashboard({ auth, stats, tutors, students, subjects, courses, campaigns, allUsers, pendingTransactions, sessions = [] }) {
+export default function AdminDashboard({ auth, stats, tutors, pendingTutors = [], students, subjects, courses, pendingCourses = [], campaigns, allUsers, pendingTransactions }) {
     const { post, processing } = useForm();
     const [rejectNote, setRejectNote] = React.useState('');
+
+    const approveTutor = (id) => {
+        if (confirm('Approve this tutor application?')) {
+            post(route('admin.tutors.approve', id));
+        }
+    };
+
+    const rejectTutor = (id) => {
+        const note = prompt('Reason for rejection:');
+        if (note) {
+            post(route('admin.tutors.reject', id), {
+                data: { note }
+            });
+        }
+    };
+
+    const approveCourse = (id) => {
+        if (confirm('Approve this course for publication?')) {
+            post(route('admin.courses.approve', id));
+        }
+    };
+
+    const rejectCourse = (id) => {
+        const note = prompt('Reason for rejection:');
+        if (note) {
+            post(route('admin.courses.reject', id), {
+                data: { note }
+            });
+        }
+    };
 
     const approvePayment = (id) => {
         if (confirm('Approve this payment and enroll the student?')) {
@@ -154,9 +186,12 @@ export default function AdminDashboard({ auth, stats, tutors, students, subjects
                         {[
                             { id: 'overview', label: '📊 Overview' },
                             { id: 'users', label: '👥 User Directory' },
+                            { id: 'tutor_apps', label: '👨‍🏫 Tutor Apps' },
+                            { id: 'course_reviews', label: '📝 Course Reviews' },
                             { id: 'curriculum', label: '🎓 Curriculum Hub' },
                             { id: 'campaigns', label: '📢 Ad Campaigns' },
-                            { id: 'sessions', label: '🎥 Classes & Timetable' }
+                            { id: 'sessions', label: '🎥 Classes' },
+                            { id: 'settings', label: '⚙️ Settings' }
                         ].map((tab) => (
                             <button
                                 key={tab.id}
@@ -458,6 +493,107 @@ export default function AdminDashboard({ auth, stats, tutors, students, subjects
                         </div>
                     )}
 
+                    {/* TAB CONTENT: TUTOR APPLICATIONS */}
+                    {activeTab === 'tutor_apps' && (
+                        <div className="space-y-6 animate-fadeIn">
+                            <div className="bg-[#1A3C5E]/15 border border-white/5 p-8 rounded-3xl backdrop-blur-md shadow-lg">
+                                <h3 className="text-xl font-serif font-bold text-white mb-6">Pending Tutor Applications</h3>
+                                {pendingTutors.length > 0 ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {pendingTutors.map(tutor => (
+                                            <div key={tutor.id} className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4 hover:border-[#F4A623]/30 transition">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <h4 className="text-lg font-bold text-white">{tutor.name}</h4>
+                                                        <p className="text-xs text-[#F4A623] font-black uppercase tracking-widest mt-1">{tutor.specialty}</p>
+                                                    </div>
+                                                    <div className="px-3 py-1 bg-[#F4A623]/10 text-[#F4A623] text-[10px] font-black uppercase rounded tracking-widest">Pending Review</div>
+                                                </div>
+                                                <p className="text-sm text-gray-400 line-clamp-3 italic leading-relaxed">"{tutor.bio}"</p>
+                                                <div className="pt-4 flex items-center justify-between border-t border-white/5">
+                                                    <span className="text-xs text-gray-500 font-bold tracking-widest uppercase">Rate: &#8358;{parseFloat(tutor.hourly_rate).toLocaleString()}/hr</span>
+                                                    <div className="space-x-2">
+                                                        <button 
+                                                            onClick={() => approveTutor(tutor.id)}
+                                                            disabled={processing}
+                                                            className="px-4 py-2 bg-[#2ECC8C] text-black text-xs font-black rounded-xl hover:bg-[#2ECC8C]/90 transition"
+                                                        >
+                                                            Approve
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => rejectTutor(tutor.id)}
+                                                            disabled={processing}
+                                                            className="px-4 py-2 bg-red-500/10 text-red-500 border border-red-500/20 text-xs font-black rounded-xl hover:bg-red-500/20 transition"
+                                                        >
+                                                            Reject
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-12 bg-white/5 rounded-2xl border border-dashed border-white/10">
+                                        <Users className="w-12 h-12 text-white/10 mx-auto mb-4" />
+                                        <p className="text-gray-500 text-sm">No pending tutor applications at the moment.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* TAB CONTENT: COURSE REVIEWS */}
+                    {activeTab === 'course_reviews' && (
+                        <div className="space-y-6 animate-fadeIn">
+                            <div className="bg-[#1A3C5E]/15 border border-white/5 p-8 rounded-3xl backdrop-blur-md shadow-lg">
+                                <h3 className="text-xl font-serif font-bold text-white mb-6">Course Publication Queue</h3>
+                                {pendingCourses.length > 0 ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {pendingCourses.map(course => (
+                                            <div key={course.id} className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4 hover:border-[#F4A623]/30 transition">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <h4 className="text-lg font-bold text-white">{course.title}</h4>
+                                                        <p className="text-xs text-gray-500 uppercase font-bold tracking-widest mt-1">Subject: {course.subject?.name}</p>
+                                                    </div>
+                                                    <div className="px-3 py-1 bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase rounded tracking-widest">Needs Approval</div>
+                                                </div>
+                                                <div className="flex items-center space-x-2 text-xs text-gray-400">
+                                                    <Users className="w-4 h-4" />
+                                                    <span>Tutor: {course.tutors?.[0]?.name || 'N/A'}</span>
+                                                </div>
+                                                <div className="pt-4 flex items-center justify-between border-t border-white/5">
+                                                    <span className="text-xs text-[#2ECC8C] font-black uppercase tracking-widest">&#8358;{parseFloat(course.price).toLocaleString()}</span>
+                                                    <div className="space-x-2">
+                                                        <button 
+                                                            onClick={() => approveCourse(course.id)}
+                                                            disabled={processing}
+                                                            className="px-4 py-2 bg-[#F4A623] text-black text-xs font-black rounded-xl hover:bg-[#F4A623]/90 transition"
+                                                        >
+                                                            Approve Course
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => rejectCourse(course.id)}
+                                                            disabled={processing}
+                                                            className="px-4 py-2 bg-red-500/10 text-red-500 border border-red-500/20 text-xs font-black rounded-xl hover:bg-red-500/20 transition"
+                                                        >
+                                                            Reject
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-12 bg-white/5 rounded-2xl border border-dashed border-white/10">
+                                        <BookOpen className="w-12 h-12 text-white/10 mx-auto mb-4" />
+                                        <p className="text-gray-500 text-sm">The course review queue is empty. Great job!</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     {/* TAB CONTENT: CURRICULUM HUB */}
                     {activeTab === 'curriculum' && (
                         <div className="space-y-8 animate-fadeIn">
@@ -752,6 +888,81 @@ export default function AdminDashboard({ auth, stats, tutors, students, subjects
                                         )}
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+                    )}
+                    {/* TAB CONTENT: PLATFORM SETTINGS */}
+                    {activeTab === 'settings' && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fadeIn">
+                            {/* Bank Details Management */}
+                            <div className="bg-[#1A3C5E]/15 border border-white/5 p-8 rounded-3xl backdrop-blur-md shadow-lg space-y-6">
+                                <div className="flex items-center space-x-3 mb-2">
+                                    <div className="p-3 bg-[#F4A623]/10 text-[#F4A623] rounded-2xl">
+                                        <Key className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-serif font-bold text-white">Payment Configuration</h3>
+                                        <p className="text-xs text-gray-400">Set the bank details students see during manual enrollment.</p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4">
+                                    <div className="flex justify-between items-center border-b border-white/5 pb-4">
+                                        <span className="text-sm text-gray-400">Status</span>
+                                        <span className="px-2 py-0.5 bg-[#2ECC8C]/10 text-[#2ECC8C] text-[10px] font-black uppercase rounded tracking-widest">Active</span>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between">
+                                            <span className="text-xs text-gray-500 uppercase font-bold tracking-tighter">Current Bank</span>
+                                            <span className="text-xs text-white font-medium italic">Pending Configuration...</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <a 
+                                    href={route('admin.settings.bank')}
+                                    className="block w-full text-center py-4 bg-[#F4A623] hover:bg-[#F4A623]/90 text-black font-black rounded-xl text-xs uppercase tracking-widest transition duration-200 shadow-lg shadow-[#F4A623]/10"
+                                >
+                                    Manage Bank Details
+                                </a>
+                            </div>
+
+                            {/* Maintenance Toggle (Extended) */}
+                            <div className="bg-[#1A3C5E]/15 border border-white/5 p-8 rounded-3xl backdrop-blur-md shadow-lg flex flex-col justify-between">
+                                <div className="space-y-6">
+                                    <div className="flex items-center space-x-3 mb-2">
+                                        <div className="p-3 bg-rose-500/10 text-rose-400 rounded-2xl">
+                                            <ShieldAlert className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-serif font-bold text-white">System Integrity</h3>
+                                            <p className="text-xs text-gray-400">Control platform accessibility and maintenance windows.</p>
+                                        </div>
+                                    </div>
+
+                                    <div className={`p-5 rounded-2xl border ${maintenanceActive ? 'bg-rose-500/5 border-rose-500/20' : 'bg-emerald-500/5 border-emerald-500/20'}`}>
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className={`text-sm font-bold ${maintenanceActive ? 'text-rose-400' : 'text-emerald-400'}`}>
+                                                    {maintenanceActive ? 'Maintenance Mode Active' : 'System Online'}
+                                                </p>
+                                                <p className="text-[10px] text-gray-500 mt-1 max-w-[200px]">
+                                                    {maintenanceActive 
+                                                        ? 'Only admins can access the platform. Students will see a maintenance page.' 
+                                                        : 'Platform is publicly accessible to all users.'}
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={toggleMaintenance}
+                                                className={`w-14 h-7 flex items-center rounded-full p-1 transition duration-300 focus:outline-none ${maintenanceActive ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                                            >
+                                                <div className={`w-5 h-5 rounded-full shadow-md transform transition duration-300 bg-white ${maintenanceActive ? 'translate-x-7' : 'translate-x-0'}`} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <p className="text-[10px] text-gray-500 italic mt-6 text-center">Last updated: {new Date().toLocaleTimeString()}</p>
                             </div>
                         </div>
                     )}

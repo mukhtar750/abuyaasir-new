@@ -9,6 +9,7 @@ use App\Models\Enrollment;
 use App\Models\Campaign;
 use App\Models\CbtExam;
 use App\Models\CbtResult;
+use App\Models\Setting;
 use Inertia\Inertia;
 
 class StudentDashboardController extends Controller
@@ -35,6 +36,7 @@ class StudentDashboardController extends Controller
 
         // 3. Recommended/Explore Courses (Physics, Chemistry, Maths)
         $exploreCourses = Course::where('is_published', true)
+            ->where('is_approved', true)
             ->whereNotIn('id', $enrollments->pluck('course_id'))
             ->with('subject')
             ->limit(4)
@@ -79,6 +81,13 @@ class StudentDashboardController extends Controller
             ->take(5)
             ->get();
 
+        // 9. Bank Details for Manual Payments
+        $bankDetails = [
+            'bank_name' => Setting::get('bank_name', 'Not Configured'),
+            'account_name' => Setting::get('account_name', 'Not Configured'),
+            'account_number' => Setting::get('bank_account_number', '0000000000'),
+        ];
+
         return Inertia::render('Student/Dashboard', [
             'enrollments' => $enrollments,
             'campaigns' => $campaigns,
@@ -88,6 +97,7 @@ class StudentDashboardController extends Controller
             'stats' => $stats,
             'transactions' => $transactions,
             'upcomingClasses' => $upcomingClasses,
+            'bankDetails' => $bankDetails,
         ]);
     }
 

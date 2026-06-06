@@ -33,6 +33,7 @@ class User extends Authenticatable
         'hourly_rate',
         'balance',
         'last_active_at',
+        'admin_note',
     ];
 
     /**

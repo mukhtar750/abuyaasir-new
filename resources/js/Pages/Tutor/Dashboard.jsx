@@ -1,15 +1,22 @@
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm } from '@inertiajs/react';
-import { Book, Plus, Video, Users, Sparkles, BookOpen } from 'lucide-react';
+import { Book, Plus, Video, Users, Sparkles, BookOpen, ShieldAlert, Clock, AlertCircle } from 'lucide-react';
 
-export default function TutorDashboard({ stats, subjects, courses, enrollments, classesToday = [] }) {
+export default function TutorDashboard({ auth, stats, subjects, courses, enrollments, classesToday = [] }) {
     
     // Forms for Tutor Actions
     const courseForm = useForm({ subject_id: '', title: '', description: '', type: 'Standard', price: 0 });
-    const lessonForm = useForm({ course_id: '', title: '', video_url: '', content: '' });
+    const lessonForm = useForm({ course_id: '', title: '', video_url: '', content: '', resources: [] });
+
+    const isApproved = auth.user.is_approved;
+    const adminNote = auth.user.admin_note;
 
     const submitCourse = (e) => {
+        if (!isApproved) {
+            alert("Your account is pending approval. You cannot create courses yet.");
+            return;
+        }
         e.preventDefault();
         courseForm.post(route('tutor.course.create'), {
             onSuccess: () => courseForm.reset(),
@@ -17,6 +24,10 @@ export default function TutorDashboard({ stats, subjects, courses, enrollments, 
     };
 
     const submitLesson = (e) => {
+        if (!isApproved) {
+            alert("Your account is pending approval. You cannot add lessons yet.");
+            return;
+        }
         e.preventDefault();
         lessonForm.post(route('tutor.lesson.create'), {
             onSuccess: () => lessonForm.reset(),
@@ -37,6 +48,34 @@ export default function TutorDashboard({ stats, subjects, courses, enrollments, 
             <div className="py-12 bg-[#0D1B2A] min-h-screen text-white">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
                     
+                    {/* Approval Status Banner */}
+                    {!isApproved && (
+                        <motion.div 
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className={`p-6 rounded-2xl border flex flex-col md:flex-row items-center gap-6 ${adminNote ? 'bg-red-500/10 border-red-500/30' : 'bg-[#F4A623]/10 border-[#F4A623]/30'}`}
+                        >
+                            <div className={`p-4 rounded-full ${adminNote ? 'bg-red-500/20 text-red-400' : 'bg-[#F4A623]/20 text-[#F4A623]'}`}>
+                                {adminNote ? <ShieldAlert className="w-8 h-8" /> : <Clock className="w-8 h-8" />}
+                            </div>
+                            <div className="flex-1 text-center md:text-left">
+                                <h3 className={`text-lg font-black uppercase tracking-widest ${adminNote ? 'text-red-400' : 'text-[#F4A623]'}`}>
+                                    {adminNote ? 'Application Rejected / Feedback Required' : 'Application Pending Approval'}
+                                </h3>
+                                <p className="text-sm text-gray-400 mt-1 leading-relaxed">
+                                    {adminNote 
+                                        ? `The admin has provided the following feedback: "${adminNote}". Please update your profile or contact support.` 
+                                        : "Your tutor account is currently under review by the administration. You can explore the dashboard, but course creation and live classes will be enabled once you are approved."}
+                                </p>
+                            </div>
+                            {!adminNote && (
+                                <div className="px-4 py-2 bg-[#F4A623]/10 border border-[#F4A623]/20 rounded-xl text-[10px] font-black text-[#F4A623] uppercase tracking-tighter">
+                                    Estimated Review: 24-48 Hours
+                                </div>
+                            )}
+                        </motion.div>
+                    )}
+
                     {/* Stats Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="bg-gradient-to-b from-[#1A3C5E]/20 to-[#0D1B2A] border border-white/5 p-6 rounded-2xl backdrop-blur-md shadow-md flex items-center space-x-4 hover:border-white/10 transition">
@@ -229,12 +268,24 @@ export default function TutorDashboard({ stats, subjects, courses, enrollments, 
                                             className="w-full bg-[#0D1B2A]/50 border border-white/10 focus:border-[#F4A623] focus:ring-[#F4A623] rounded-xl p-4 text-sm text-white transition h-28"
                                         />
                                     </div>
+
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-2 font-medium">Downloadable Resources (PDFs, Slides, Zip)</label>
+                                        <input
+                                            type="file"
+                                            multiple
+                                            onChange={e => lessonForm.setData('resources', e.target.files)}
+                                            className="w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#F4A623]/10 file:text-[#F4A623] hover:file:bg-[#F4A623]/20 transition"
+                                        />
+                                        <p className="text-[10px] text-gray-500 mt-1">Select multiple files if needed (Max 5MB each)</p>
+                                    </div>
+
                                     <button
                                         type="submit"
                                         disabled={lessonForm.processing}
                                         className="w-full py-3 bg-[#F4A623] hover:bg-[#F4A623]/95 text-black font-bold rounded-xl text-xs transition duration-200 shadow-md shadow-[#F4A623]/15"
                                     >
-                                        Add Lesson Material
+                                        {lessonForm.processing ? 'Uploading Lesson...' : 'Add Lesson Material'}
                                     </button>
                                 </form>
                             </div>
@@ -254,7 +305,7 @@ export default function TutorDashboard({ stats, subjects, courses, enrollments, 
                                 ) : (
                                     <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
                                         {courses.map(crs => (
-                                            <div key={crs.id} className="border-b border-white/5 pb-4 last:border-b-0">
+                                            <div key={crs.id} className="border-b border-white/5 pb-4 last:border-b-0 space-y-2">
                                                 <div className="flex justify-between items-start">
                                                     <div>
                                                         <h4 className="font-bold text-xs text-white leading-tight">{crs.title}</h4>
@@ -262,8 +313,24 @@ export default function TutorDashboard({ stats, subjects, courses, enrollments, 
                                                             {crs.subject.name} | {crs.type}
                                                         </span>
                                                     </div>
-                                                    <span className="text-xs text-[#F4A623] font-bold shrink-0">{crs.lessons.length} Lessons</span>
+                                                    <div className="flex flex-col items-end gap-1.5">
+                                                        <span className="text-xs text-[#F4A623] font-bold shrink-0">{crs.lessons.length} Lessons</span>
+                                                        <span className={`px-1.5 py-0.5 text-[8px] font-black uppercase rounded tracking-widest ${
+                                                            crs.is_approved 
+                                                            ? 'bg-emerald-500/10 text-emerald-400' 
+                                                            : crs.admin_note 
+                                                                ? 'bg-red-500/10 text-red-400' 
+                                                                : 'bg-blue-500/10 text-blue-400'
+                                                        }`}>
+                                                            {crs.is_approved ? 'Live' : crs.admin_note ? 'Rejected' : 'Pending Review'}
+                                                        </span>
+                                                    </div>
                                                 </div>
+                                                {!crs.is_approved && crs.admin_note && (
+                                                    <div className="p-2 bg-red-500/5 border border-red-500/10 rounded-lg text-[10px] text-red-400 italic">
+                                                        Note: {crs.admin_note}
+                                                    </div>
+                                                )}
                                             </div>
                                         ))}
                                     </div>

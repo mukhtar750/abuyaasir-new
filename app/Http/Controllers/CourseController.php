@@ -20,19 +20,24 @@ class CourseController extends Controller
         ]);
     }
 
-    public function show($id)
+    public function show(Course $course)
     {
-        $course = Course::with(['subject', 'lessons'])->findOrFail($id);
-        $bankAccountNumber = Setting::get('bank_account_number', '0123456789');
+        $course->load(['subject', 'lessons']);
+        $bankDetails = [
+            'bank_name' => Setting::get('bank_name', 'Not Configured'),
+            'account_name' => Setting::get('account_name', 'Not Configured'),
+            'account_number' => Setting::get('bank_account_number', '0000000000'),
+        ];
+
         return Inertia::render('Student/Courses/Show', [
             'course' => $course,
-            'bankAccountNumber' => $bankAccountNumber,
+            'bankDetails' => $bankDetails,
         ]);
     }
 
-    public function learn($id)
+    public function learn(Course $course)
     {
-        $course = Course::with(['lessons', 'subject'])->findOrFail($id);
+        $course->load(['lessons', 'subject']);
         
         $enrollment = $course->enrollments()->where('student_id', auth()->id())->firstOrFail();
 
@@ -55,10 +60,8 @@ class CourseController extends Controller
         ]);
     }
 
-    public function completeLesson(Request $request, $id, $lesson_id)
+    public function completeLesson(Request $request, Course $course, Lesson $lesson)
     {
-        $course = Course::findOrFail($id);
-        $lesson = Lesson::where('course_id', $id)->findOrFail($lesson_id);
         $user = auth()->user();
 
         LessonProgress::firstOrCreate([

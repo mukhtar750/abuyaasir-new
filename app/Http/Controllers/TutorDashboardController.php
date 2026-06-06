@@ -87,6 +87,7 @@ class TutorDashboardController extends Controller
             'title' => 'required|string',
             'video_url' => 'nullable|url',
             'content' => 'nullable|string',
+            'resources.*' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,zip,jpg,png|max:5120', // Max 5MB per file
         ]);
 
         $course = Course::findOrFail($request->course_id);
@@ -97,6 +98,17 @@ class TutorDashboardController extends Controller
             return redirect()->back()->withErrors(['course_id' => 'You do not own this course.']);
         }
 
+        $resources = [];
+        if ($request->hasFile('resources')) {
+            foreach ($request->file('resources') as $file) {
+                $path = $file->store('lesson_resources', 'public');
+                $resources[] = [
+                    'name' => $file->getClientOriginalName(),
+                    'path' => $path,
+                ];
+            }
+        }
+
         $orderIndex = Lesson::where('course_id', $course->id)->count() + 1;
 
         Lesson::create([
@@ -105,8 +117,9 @@ class TutorDashboardController extends Controller
             'video_url' => $request->video_url,
             'content' => $request->input('content'),
             'order_index' => $orderIndex,
+            'resources' => $resources,
         ]);
 
-        return redirect()->back()->with('message', 'Lesson added successfully.');
+        return redirect()->back()->with('message', 'Lesson added successfully with resources.');
     }
 }
